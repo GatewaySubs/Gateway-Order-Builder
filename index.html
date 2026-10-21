@@ -1,0 +1,2539 @@
+<!DOCTYPE html>
+<html lang="en"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Gateway Subs – Order Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&amp;family=Barlow:wght@400;500;600&amp;display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #1a2744;
+    --blue: #2d4a8a;
+    --gold: #f5c842;
+    --light: #f4f6fb;
+    --border: #dde3f0;
+    --text: #1a2744;
+    --muted: #6b7a99;
+    --green: #2ecc71;
+    --red: #e74c3c;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Barlow', sans-serif;
+    background: var(--light);
+    color: var(--text);
+    min-height: 100vh;
+    padding-bottom: 100px;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--navy);
+    color: white;
+    padding: 16px 20px;
+    border-bottom: 4px solid var(--gold);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    max-width: 680px;
+    margin: 0 auto;
+  }
+  header h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  header .badge {
+    font-size: 10px;
+    color: var(--gold);
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+
+  /* ── TABS ── */
+  .tab-bar {
+    background: white;
+    border-bottom: 2px solid var(--border);
+    display: flex;
+    position: sticky;
+    top: 62px;
+    z-index: 99;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 14px 8px;
+    border: none;
+    background: none;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -2px;
+    transition: all 0.2s;
+  }
+  .tab-btn.active {
+    color: var(--navy);
+    border-bottom-color: var(--gold);
+  }
+
+  /* ── MAIN ── */
+  .main { max-width: 680px; margin: 0 auto; padding: 16px; }
+
+  .section {
+    background: white;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    margin-bottom: 16px;
+    overflow: hidden;
+  }
+
+  .section-header {
+    background: var(--navy);
+    color: white;
+    padding: 11px 16px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-body { padding: 16px; }
+
+  /* ── FIELDS ── */
+  .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+  .field input, .field select, .field textarea {
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 14px;
+    font-size: 16px; /* 16px prevents iOS zoom */
+    font-family: 'Barlow', sans-serif;
+    color: var(--text);
+    background: white;
+    width: 100%;
+    -webkit-appearance: none;
+    transition: border-color 0.2s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus {
+    outline: none;
+    border-color: var(--blue);
+  }
+  .field textarea { resize: vertical; min-height: 70px; font-size: 15px; }
+  .field select { cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7a99' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  /* Full Subs ingredient chips */
+  .ing-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
+  .ing-chip { font-family: 'Barlow', sans-serif; font-size: 13px; font-weight: 600; padding: 6px 11px; border-radius: 16px; border: 1.5px solid var(--border); background: #fff; color: var(--text); cursor: pointer; touch-action: manipulation; }
+  .ing-chip.removed { border-color: var(--red); color: var(--red); background: #fff5f5; text-decoration: line-through; }
+  .ing-chip.added { border-color: var(--green); color: #fff; background: var(--green); }
+  .fsub-rack { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; margin: 4px 0 10px; cursor: pointer; }
+  .fsub-rack input { width: 18px; height: 18px; }
+  .row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+
+  /* ── TOGGLE BUTTONS ── */
+  .toggle-group { display: flex; gap: 8px; }
+  .toggle-btn {
+    flex: 1;
+    padding: 11px 8px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    background: white;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .toggle-btn.active {
+    border-color: var(--navy);
+    background: var(--navy);
+    color: var(--gold);
+  }
+
+  /* ── COUNTER ROW ── */
+  .counter-row {
+    display: flex;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--light);
+  }
+  .counter-row:last-child { border-bottom: none; }
+  .counter-row label { flex: 1; font-size: 14px; font-weight: 500; }
+  .counter-btns { display: flex; align-items: center; gap: 0; }
+  .counter-btns button {
+    width: 36px;
+    height: 36px;
+    border: 1.5px solid var(--border);
+    background: white;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--navy);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    touch-action: manipulation;
+  }
+  .counter-btns button:first-child { border-radius: 8px 0 0 8px; }
+  .counter-btns button:last-child { border-radius: 0 8px 8px 0; }
+  .counter-btns button:active { background: var(--navy); color: white; }
+  .counter-btns .count {
+    width: 40px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 16px;
+    border-top: 1.5px solid var(--border);
+    border-bottom: 1.5px solid var(--border);
+    height: 36px;
+    line-height: 36px;
+    background: var(--light);
+  }
+
+  /* ── ORDER TYPE SUB-TOGGLE ── */
+  .order-type-toggle {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .order-type-btn {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: white;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    color: var(--muted);
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .order-type-btn.active {
+    border-color: var(--navy);
+    background: var(--navy);
+    color: var(--gold);
+  }
+
+  /* ── ITEM CARDS (racks, platters, boxes) ── */
+  .item-card {
+    background: var(--light);
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+  }
+  .item-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .item-card-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: var(--blue);
+  }
+  .remove-btn {
+    background: none;
+    border: 1px solid #fcc;
+    color: var(--red);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-family: 'Barlow', sans-serif;
+  }
+
+  /* ── SANDWICH ROWS ── */
+  .sandwich-row {
+    display: grid;
+    grid-template-columns: 60px 1fr 32px;
+    gap: 8px;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+  .sandwich-row input[type="number"] {
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 6px;
+    font-size: 16px;
+    font-family: 'Barlow', sans-serif;
+    text-align: center;
+    width: 100%;
+    background: white;
+    -webkit-appearance: none;
+  }
+  .sandwich-row select {
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 10px;
+    font-size: 15px;
+    font-family: 'Barlow', sans-serif;
+    color: var(--text);
+    background: white;
+    -webkit-appearance: none;
+    width: 100%;
+  }
+  .del-row-btn {
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px;
+    line-height: 1;
+    touch-action: manipulation;
+  }
+  .del-row-btn:active { color: var(--red); }
+
+  .add-sandwich-btn {
+    width: 100%;
+    padding: 9px;
+    border: 1.5px dashed var(--blue);
+    border-radius: 8px;
+    background: none;
+    color: var(--blue);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Barlow', sans-serif;
+    margin-top: 4px;
+    touch-action: manipulation;
+  }
+
+  .add-item-btn {
+    width: 100%;
+    padding: 12px;
+    border: 1.5px dashed var(--blue);
+    border-radius: 10px;
+    background: none;
+    color: var(--blue);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Barlow Condensed', sans-serif;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-top: 4px;
+    touch-action: manipulation;
+  }
+
+  .sub-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+    margin-top: 4px;
+  }
+
+  /* ── GENERATE BUTTON ── */
+  .generate-btn {
+    position: fixed;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(100% - 32px);
+    max-width: 648px;
+    padding: 18px;
+    background: var(--gold);
+    color: var(--navy);
+    border: none;
+    border-radius: 14px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    z-index: 98;
+    touch-action: manipulation;
+  }
+  .generate-btn:active { background: #e8b800; transform: translateX(-50%) scale(0.98); }
+
+  /* ── OUTPUT / PREVIEW ── */
+  #tab-preview { display: none; }
+
+  .preview-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  .action-btn {
+    flex: 1;
+    min-width: 120px;
+    padding: 14px 12px;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: all 0.2s;
+  }
+  .btn-copy { background: var(--navy); color: white; }
+  .btn-copy:active { background: var(--blue); }
+  .btn-copy.copied { background: var(--green); }
+  .btn-print { background: var(--gold); color: var(--navy); }
+  .btn-print:active { background: #e8b800; }
+  .btn-save-order { background: var(--green); color: white; }
+  .btn-save-order:active { filter: brightness(0.92); }
+
+  /* ORDER SHEET STYLES */
+  .order-sheet {
+    background: white;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .sheet-header {
+    background: var(--navy);
+    color: white;
+    padding: 20px;
+    text-align: center;
+  }
+  .sheet-header h2 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 24px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .sheet-header .sheet-meta {
+    font-size: 13px;
+    color: rgba(255,255,255,0.75);
+    margin-top: 4px;
+  }
+  .sheet-badges {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 10px;
+    flex-wrap: wrap;
+  }
+  .badge-pill {
+    background: var(--gold);
+    color: var(--navy);
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 800;
+    font-size: 12px;
+    letter-spacing: 1px;
+    padding: 4px 12px;
+    border-radius: 20px;
+    text-transform: uppercase;
+  }
+
+  .sheet-body { padding: 16px; }
+
+  .sheet-section { margin-bottom: 16px; }
+  .sheet-section-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+  }
+  .sheet-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 4px 0;
+    font-size: 14px;
+  }
+  .sheet-qty {
+    font-weight: 700;
+    color: var(--blue);
+    min-width: 32px;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px;
+  }
+  .sheet-name { flex: 1; }
+  .sheet-sub {
+    color: var(--muted);
+    font-size: 13px;
+    padding: 2px 0 2px 32px;
+  }
+
+  .supplies-box {
+    background: var(--navy);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-top: 8px;
+  }
+  .supplies-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 10px;
+  }
+  .supplies-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 16px;
+  }
+  .supply-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: white;
+    font-size: 14px;
+  }
+  .supply-qty {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--gold);
+    min-width: 32px;
+  }
+
+  /* ── HIDDEN DELIVERY FIELD ── */
+  #delivery-address-wrap { display: none; }
+
+  /* ── PRINT SIZE CONTROLS (screen only) ── */
+  .print-size-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    background: var(--light);
+    border-radius: 8px;
+    padding: 8px 14px;
+  }
+  .print-size-controls span {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    min-width: 80px;
+    text-align: center;
+  }
+  .size-btn {
+    background: var(--navy);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: "Barlow Condensed", sans-serif;
+    touch-action: manipulation;
+  }
+  .size-btn:active { background: var(--blue); }
+
+  /* ── PRINT STYLES ── */
+  @media print {
+    * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+    body { padding: 0; margin: 0; background: white; font-family: Arial, Helvetica, sans-serif; }
+    header, .tab-bar, .generate-btn, .preview-actions, #tab-form,
+    #tab-drafts, .hint, .print-size-controls { display: none !important; }
+    #tab-preview { display: block !important; }
+    .main { padding: 0; max-width: 100%; margin: 0; }
+
+    @page { size: letter portrait; margin: 0.35in; }
+    /* Hide Netlify badge */
+    [data-netlify-deploy-url], .netlify-badge, #netlify-badge,
+    a[href*="netlify"], div[style*="netlify"] { display: none !important; }
+
+    /* Hide screen-only sheet, show print sheet */
+    #order-sheet { display: none !important; }
+    #print-sheet { display: block !important; }
+    #passcode-gate { display: none !important; }
+  }
+
+  .divider { height: 1px; background: var(--border); margin: 12px 0; }
+
+  /* ── SPECIAL REQUEST ── */
+  .note-toggle-btn {
+    background: none;
+    border: none;
+    color: var(--blue);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    padding: 2px 6px;
+    font-family: 'Barlow', sans-serif;
+    opacity: 0.7;
+    touch-action: manipulation;
+  }
+  .note-toggle-btn:active { opacity: 1; }
+  .inline-note {
+    display: none;
+    margin-top: 4px;
+    margin-bottom: 4px;
+  }
+  .inline-note input {
+    width: 100%;
+    border: 1.5px solid var(--border);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 15px;
+    font-family: 'Barlow', sans-serif;
+    color: var(--text);
+    background: #fffef0;
+    border-color: var(--gold);
+  }
+  .inline-note input:focus { outline: none; border-color: var(--blue); }
+
+  /* SECTION NOTE */
+  .section-note-wrap { margin-top: 8px; border-top: 1px dashed var(--border); padding-top: 8px; }
+  .section-note-toggle {
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--blue);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: left;
+    padding: 4px 0;
+    font-family: 'Barlow', sans-serif;
+    touch-action: manipulation;
+  }
+  .section-note-input {
+    display: none;
+    width: 100%;
+    margin-top: 6px;
+    border: 1.5px solid var(--gold);
+    border-radius: 8px;
+    padding: 9px 12px;
+    font-size: 15px;
+    font-family: 'Barlow', sans-serif;
+    color: var(--text);
+    background: #fffef0;
+    resize: none;
+    min-height: 50px;
+  }
+  .section-note-input:focus { outline: none; border-color: var(--blue); }
+
+  /* DRAFT CARD */
+  .draft-card {
+    background: var(--light);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    padding: 14px;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .draft-info { flex: 1; }
+  .draft-title { font-weight: 700; font-size: 15px; }
+  .draft-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .draft-actions { display: flex; gap: 6px; }
+  .draft-load-btn {
+    background: var(--navy);
+    color: white;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 12px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Barlow', sans-serif;
+    touch-action: manipulation;
+  }
+  .draft-del-btn {
+    background: none;
+    border: 1px solid #fcc;
+    color: var(--red);
+    border-radius: 6px;
+    padding: 7px 10px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Barlow', sans-serif;
+    touch-action: manipulation;
+  }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 6px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div>
+      <div class="badge">Internal Use Only</div>
+      <h1>🥖 Gateway Subs</h1>
+    </div>
+    <div style="font-family:'Barlow Condensed',sans-serif;font-size:13px;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:1px;">Order Builder</div>
+  </div>
+</header>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="showTab('form')" id="tabbtn-form">📋 Build Order</button>
+  <button class="tab-btn" onclick="showTab('preview')" id="tabbtn-preview">📄 Order Sheet</button>
+  <button class="tab-btn" onclick="showTab('drafts')" id="tabbtn-drafts">📁 Orders</button>
+</div>
+
+<!-- ══════════════ FORM TAB ══════════════ -->
+<div id="tab-form">
+  <div class="main">
+
+    <!-- ORDER INFO -->
+    <div class="section">
+      <div class="section-header">📋 Order Info</div>
+      <div class="section-body">
+        <div class="row2">
+          <div class="field" style="position:relative;">
+            <label>Client Name</label>
+            <input type="text" id="client" placeholder="e.g. Suncoast Corp" autocomplete="off" oninput="onClientInput()" onblur="setTimeout(()=&gt;{var b=document.getElementById('client-suggest');if(b)b.style.display='none';},180)">
+            <div id="client-suggest" style="position:absolute;left:0;right:0;top:100%;z-index:30;background:#fff;border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px;max-height:220px;overflow:auto;display:none;box-shadow:0 6px 18px rgba(0,0,0,0.12);"></div>
+          </div>
+          <div class="field">
+            <label>Location</label>
+            <input type="text" id="location" placeholder="e.g. Pasadena Ave">
+          </div>
+        </div>
+        <div id="reorder-row" style="display:none;margin-bottom:12px;">
+          <button onclick="loadLastOrder()" style="background:var(--gold);color:var(--navy);border:none;border-radius:8px;padding:10px 14px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:13px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">↺ Load this customer's last order</button>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>Date</label>
+            <input type="date" id="order-date">
+          </div>
+          <div class="field">
+            <label>Headcount</label>
+            <input type="number" id="headcount" placeholder="# people" min="1" inputmode="numeric">
+          </div>
+        </div>
+        <div class="row2">
+          <div class="field">
+            <label>Ready Time</label>
+            <input type="time" id="ready-time">
+          </div>
+          <div class="field">
+            <label>Pickup / Delivery Time</label>
+            <input type="time" id="pickup-time">
+          </div>
+        </div>
+        <div class="field">
+          <label>Fulfillment</label>
+          <div class="toggle-group">
+            <button class="toggle-btn active" onclick="setFulfillment('pickup')" id="btn-pickup">🚗 Pickup</button>
+            <button class="toggle-btn" onclick="setFulfillment('delivery')" id="btn-delivery">🚚 Delivery</button>
+          </div>
+        </div>
+        <div id="delivery-address-wrap" class="field" style="margin-top:10px;">
+          <label>Delivery Address</label>
+          <input type="text" id="delivery-address" placeholder="Full delivery address">
+        </div>
+        <div class="field" style="margin-top:10px;">
+          <label>Phone / Email</label>
+          <input type="text" id="contact-info" placeholder="e.g. 727-555-0100 or client@email.com">
+        </div>
+      </div>
+    </div>
+
+    <!-- ORDER TYPE -->
+    <div class="section">
+      <div class="section-header">🥪 What Are They Getting?</div>
+      <div class="section-body">
+        <div class="order-type-toggle">
+          <button class="order-type-btn active" onclick="setOrderType('racks')" id="obtn-racks">Racks &amp; Platters</button>
+          <button class="order-type-btn" onclick="setOrderType('boxlunch')" id="obtn-boxlunch">Box Lunches</button>
+          <button class="order-type-btn" onclick="setOrderType('fullsubs')" id="obtn-fullsubs">Full Subs</button>
+        </div>
+
+        <!-- RACKS & PLATTERS -->
+        <div id="section-racks">
+          <div class="sub-label">Party Packs (Racks)</div>
+          <div id="racks-container"></div>
+          <button class="add-item-btn" onclick="addRack()">+ Add Rack</button>
+
+          <div class="divider"></div>
+
+          <div class="sub-label" style="margin-top:4px;">Pretty Platters</div>
+          <div id="platters-container"></div>
+          <button class="add-item-btn" onclick="addPlatter()">+ Add Platter</button>
+        </div>
+
+        <!-- BOX LUNCHES -->
+        <div id="section-boxlunch" style="display:none;">
+          <div id="boxlunch-container"></div>
+          <button class="add-item-btn" onclick="addBoxLunch()">+ Add Box Lunch</button>
+        </div>
+
+        <!-- FULL SUBS -->
+        <div id="section-fullsubs" style="display:none;">
+          <div id="fullsubs-container"></div>
+          <button class="add-item-btn" onclick="addFullSub()">+ Add Full Sub</button>
+
+          <div class="divider"></div>
+          <div class="sub-label">Custom / Off-Menu Items</div>
+          <div id="fullsub-custom-container"></div>
+          <button class="add-sandwich-btn" onclick="addCustomFullSub()">+ Add custom item</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SIDES -->
+    <div class="section">
+      <div class="section-header">🥗 Sides</div>
+      <div class="section-body">
+
+        <!-- Garden Salad -->
+        <div class="counter-row">
+          <label>Garden Salad</label>
+          <div class="counter-btns"><button onclick="adjSalad('side-salad',-1)">−</button><div class="count" id="side-salad">0</div><button onclick="adjSalad('side-salad',1)">+</button></div>
+        </div>
+        <div id="salad-rows-wrap" style="display:none;padding:4px 0 8px 0;">
+          <div id="salad-rows-container"></div>
+        </div>
+
+        <!-- Garden Salad + Grilled Chicken -->
+        <div class="counter-row">
+          <label>Garden Salad + Grilled Chicken</label>
+          <div class="counter-btns"><button onclick="adjSalad('side-salad-chicken',-1)">−</button><div class="count" id="side-salad-chicken">0</div><button onclick="adjSalad('side-salad-chicken',1)">+</button></div>
+        </div>
+        <div id="salad-chicken-rows-wrap" style="display:none;padding:4px 0 8px 0;">
+          <div id="salad-chicken-rows-container"></div>
+        </div>
+
+        <!-- Cookies -->
+        <div class="counter-row" style="align-items:center;">
+          <label>Cookies</label>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <input type="number" id="cookies-qty" min="0" placeholder="0" inputmode="numeric" style="width:80px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;">
+            <button class="note-toggle-btn" onclick="toggleInlineNote('note-cookies')">💬</button>
+          </div>
+        </div>
+        <div class="inline-note" id="note-cookies" style="margin-bottom:6px;">
+          <input type="text" placeholder="Special request for cookies...">
+        </div>
+
+      </div>
+    </div>
+
+    <!-- SAUCES -->
+    <div class="section">
+      <div class="section-header">🫙 Sauces</div>
+      <div class="section-body">
+        <div class="counter-row" style="align-items:center;"><label>Hot Honey</label><input type="number" id="s-hothooney" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Hot Garlic Buffalo</label><input type="number" id="s-buffalo" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Creamy Caesar</label><input type="number" id="s-caesar" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Sub Sauce</label><input type="number" id="s-subsauce" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Horseradish Aioli</label><input type="number" id="s-horseradish" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Spicy Ranch</label><input type="number" id="s-spicyranch" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Sweet Sauce</label><input type="number" id="s-sweet" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Chipotle Mayo</label><input type="number" id="s-chipotle" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Sweet Tang</label><input type="number" id="s-sweettang" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Ranch</label><input type="number" id="s-ranch" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Balsamic</label><input type="number" id="s-balsamic" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="section-note-wrap">
+          <button class="section-note-toggle" onclick="toggleSectionNote('note-sauces')">+ Add special request for this section</button>
+          <textarea class="section-note-input" id="note-sauces" placeholder="e.g. All sauces on the side..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- VEGGIES -->
+    <div class="section">
+      <div class="section-header">🥦 Veggies</div>
+      <div class="section-body">
+        <div class="counter-row" style="align-items:center;"><label>Hot Peppers</label><input type="number" id="v-hotpeppers" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Sweet Peppers</label><input type="number" id="v-sweetpeppers" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Banana Peppers</label><input type="number" id="v-banana" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Black Olives</label><input type="number" id="v-olives" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Spinach</label><input type="number" id="v-spinach" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Cucumber</label><input type="number" id="v-cucumber" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Pickles</label><input type="number" id="v-pickles" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="section-note-wrap">
+          <button class="section-note-toggle" onclick="toggleSectionNote('note-veggies')">+ Add special request for this section</button>
+          <textarea class="section-note-input" id="note-veggies" placeholder="e.g. All veggies on the side..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHIPS -->
+    <div class="section">
+      <div class="section-header">🥔 Chips</div>
+      <div class="section-body">
+        <div class="counter-row" style="align-items:center;"><label>Cool Ranch Doritos</label><input type="number" id="c-coolranch" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Spicy Sweet Chili Doritos</label><input type="number" id="c-sweetchilidoritos" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>BBQ</label><input type="number" id="c-bbq" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Salt &amp; Vinegar</label><input type="number" id="c-saltvinegar" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Sea Salt</label><input type="number" id="c-seasalt" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Jalapeño</label><input type="number" id="c-jalapeno" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Voodoo</label><input type="number" id="c-voodoo" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Cheddar &amp; Sour Cream</label><input type="number" id="c-cheddar" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center; border-top: 1.5px dashed var(--border); margin-top:6px; padding-top:12px;">
+          <label style="font-weight:600; color:var(--blue);">Variety Pack</label>
+          <input type="number" id="c-variety" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;">
+        </div>
+        <div class="section-note-wrap">
+          <button class="section-note-toggle" onclick="toggleSectionNote('note-chips')">+ Add special request for chips</button>
+          <textarea class="section-note-input" id="note-chips" placeholder="e.g. Keep chips separate from sandwiches..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- DRINKS -->
+    <div class="section">
+      <div class="section-header">🥤 Drinks</div>
+      <div class="section-body">
+        <div class="counter-row" style="align-items:center;"><label>Water Bottle</label><input type="number" id="d-water" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Pepsi</label><input type="number" id="d-pepsi" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Diet Pepsi</label><input type="number" id="d-dietpepsi" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Starry</label><input type="number" id="d-starry" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Odyssey Elixir Energy</label><input type="number" id="d-odyssey" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Gatorade</label><input type="number" id="d-gatorade" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Sweet Tea</label><input type="number" id="d-sweettea" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Unsweet Tea</label><input type="number" id="d-unsweettea" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Gallon Sweet Tea</label><input type="number" id="d-gallon-sweet" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Gallon Unsweet Tea</label><input type="number" id="d-gallon-unsweet" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Gallon Cold Brew</label><input type="number" id="d-gallon-coldbrew" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Gallon Lemonade</label><input type="number" id="d-lemonade" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="section-note-wrap">
+          <button class="section-note-toggle" onclick="toggleSectionNote('note-drinks')">+ Add note for drinks</button>
+          <textarea class="section-note-input" id="note-drinks" placeholder="e.g. Keep drinks cold..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHEESECAKE -->
+    <div class="section">
+      <div class="section-header">🍰 Cheesecake</div>
+      <div class="section-body">
+        <div class="counter-row" style="align-items:center;"><label>Cheesecake Slice</label><input type="number" id="cheesecake-slice" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Whole Cheesecake</label><input type="number" id="cheesecake-whole" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+      </div>
+    </div>
+
+    <!-- CUSTOM SIDES -->
+    <div class="section">
+      <div class="section-header">➕ Custom Sides</div>
+      <div class="section-body">
+        <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">Type in any side not on the menu. Each one auto-adds 1 spoon.</p>
+        <div id="custom-sides-container"></div>
+        <button class="add-item-btn" onclick="addCustomSide()" style="margin-top:4px;">+ Add Custom Side</button>
+      </div>
+    </div>
+
+    <!-- SUPPLIES & CONDIMENTS (editable overrides) -->
+    <div class="section">
+      <div class="section-header">🧂 Supplies &amp; Condiments</div>
+      <div class="section-body">
+        <p class="hint" style="margin:0 0 12px;">Each auto-calculates. Type a number to set it <strong>exactly</strong> — enter <strong>0</strong> for none (e.g. no packets in the boxes).</p>
+        <div class="counter-row" style="align-items:center;"><label>Mayo</label><input type="number" id="sup-mayo" min="0" placeholder="auto: 0" inputmode="numeric" style="width:84px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Mustard</label><input type="number" id="sup-mustard" min="0" placeholder="auto: 0" inputmode="numeric" style="width:84px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Napkins</label><input type="number" id="sup-napkins" min="0" placeholder="auto: 0" inputmode="numeric" style="width:84px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Serving Tongs</label><input type="number" id="sup-tongs" min="0" placeholder="auto: 0" inputmode="numeric" style="width:84px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Plates</label><input type="number" id="sup-plates" min="0" placeholder="auto: 0" inputmode="numeric" style="width:84px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Forks</label><input type="number" id="sup-forks" min="0" placeholder="auto: 0" inputmode="numeric" style="width:84px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Spoons</label><input type="number" id="sup-spoons" min="0" placeholder="auto: 0" inputmode="numeric" style="width:84px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Cups</label><input type="number" id="sup-cups" min="0" placeholder="auto: 0" inputmode="numeric" style="width:84px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+      </div>
+    </div>
+
+    <!-- PREP / KITCHEN INSTRUCTIONS -->
+    <div class="section">
+      <div class="section-header">🔪 Prep / Kitchen Instructions</div>
+      <div class="section-body">
+        <div class="field">
+          <textarea id="prep-notes" placeholder="Preslice / portioning / cut style — e.g. '6 oz meat, all on bottom · 8 ham, 9 turkey' or '8 full subs per tray, cut in 1/4'"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- NOTES -->
+    <div class="section">
+      <div class="section-header">📝 Notes</div>
+      <div class="section-body">
+        <div class="field">
+          <textarea id="order-notes" placeholder="Special instructions, allergies, notes..."></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div style="height:80px;"></div>
+  </div>
+
+  <div style="position:fixed;bottom:16px;left:50%;transform:translateX(-50%);width:calc(100% - 32px);max-width:648px;display:flex;gap:10px;z-index:98;">
+  <button style="flex:1;padding:18px;background:var(--navy);color:white;border:none;border-radius:14px;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:900;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.2);touch-action:manipulation;" onclick="saveDraft()">💾 Save Draft</button>
+  <button style="flex:2;padding:18px;background:var(--gold);color:var(--navy);border:none;border-radius:14px;font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:900;letter-spacing:2px;text-transform:uppercase;cursor:pointer;box-shadow:0 4px 20px rgba(0,0,0,0.2);touch-action:manipulation;" onclick="generateOrder()">⚡ Generate</button>
+</div>
+</div>
+
+
+<!-- ══════════════ DRAFTS TAB ══════════════ -->
+<div id="tab-drafts" style="display:none;">
+  <div class="main">
+    <div class="section">
+      <div class="section-header">📁 Saved Orders</div>
+      <div class="section-body">
+        <div id="drafts-list">
+          <p style="color:var(--muted);font-size:14px;text-align:center;padding:20px 0;">No drafts saved yet.<br>Fill out an order and tap Save as Draft.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ PREVIEW TAB ══════════════ -->
+<div id="tab-preview" style="display:none;">
+  <div class="main">
+    <div class="preview-actions">
+      <button class="action-btn btn-print" onclick="printSheet()">🖨️ Print / Save PDF</button>
+      <button class="action-btn btn-save-order" onclick="saveDraft('confirmed')">✅ Save Order</button>
+    </div>
+    <div class="print-size-controls">
+      <button class="size-btn" onclick="adjustPrintSize(-1)">A−</button>
+      <span id="size-label">Font: Auto</span>
+      <button class="size-btn" onclick="adjustPrintSize(1)">A+</button>
+    </div>
+    <p class="hint" style="margin-bottom:12px;text-align:center;">On iPhone: Print → tap the preview → Share → Save to Files or send to Slack</p>
+
+    <div class="order-sheet" id="order-sheet">
+      <div style="text-align:center;padding:40px 20px;color:var(--muted);">
+        <div style="font-size:40px;margin-bottom:10px;">🥖</div>
+        <p>Build your order first, then tap<br><strong>Generate Order Sheet</strong></p>
+      </div>
+    </div>
+
+    <!-- PRINT-ONLY SHEET -->
+    <div id="print-sheet" style="display:none; font-family:Arial,Helvetica,sans-serif; color:#000; width:100%;"></div>
+  </div>
+</div>
+
+<div id="passcode-gate" style="position:fixed;inset:0;background:#1a2744;display:none;align-items:center;justify-content:center;z-index:1000;padding:24px;">
+  <div style="background:#fff;border-radius:12px;border-top:4px solid #f5c842;padding:24px;max-width:340px;width:100%;text-align:center;">
+    <div style="font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:20px;text-transform:uppercase;letter-spacing:1px;color:#1a2744;">Staff access</div>
+    <p style="color:#6b7a99;font-size:14px;margin:8px 0 16px;">Enter the catering passcode to continue.</p>
+    <input id="passcode-input" type="password" inputmode="numeric" placeholder="Passcode" onkeydown="if(event.key==='Enter')submitPasscode()" style="width:100%;border:1.5px solid #dde3f0;border-radius:8px;padding:12px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;">
+    <div id="passcode-err" style="color:#e74c3c;font-size:13px;margin-top:8px;display:none;"></div>
+    <button onclick="submitPasscode()" style="width:100%;margin-top:14px;background:#1a2744;color:#fff;border:none;border-radius:8px;padding:13px;font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:15px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;">Unlock</button>
+  </div>
+</div>
+
+<script>
+  // ── STAFF API (passcode-gated cloud sync to Supabase) ──
+  const STAFF_API = 'https://xmewmjzaeltegqsvzrqh.supabase.co/functions/v1';
+  let currentOrderId = null;   // set on save/load so re-saving updates the same order instead of duplicating
+  function staffKey() { return localStorage.getItem('gw-staff-key') || ''; }
+  async function staffApi(path, opts = {}) {
+    const res = await fetch(STAFF_API + path, {
+      method: opts.method || 'GET',
+      headers: Object.assign({ 'X-Staff-Key': staffKey() }, opts.body ? { 'Content-Type': 'application/json' } : {}),
+      body: opts.body ? JSON.stringify(opts.body) : undefined,
+    });
+    if (res.status === 401) { localStorage.removeItem('gw-staff-key'); showPasscodeGate('That passcode did not work — try again.'); throw new Error('unauthorized'); }
+    if (!res.ok) throw new Error('request failed');
+    return res.json();
+  }
+  function showPasscodeGate(msg) {
+    const g = document.getElementById('passcode-gate'); if (!g) return;
+    g.style.display = 'flex';
+    const e = document.getElementById('passcode-err');
+    if (e) { e.style.display = msg ? 'block' : 'none'; e.textContent = msg || ''; }
+    const i = document.getElementById('passcode-input'); if (i) { i.value = ''; setTimeout(() => i.focus(), 50); }
+  }
+  function hidePasscodeGate() { const g = document.getElementById('passcode-gate'); if (g) g.style.display = 'none'; }
+  async function submitPasscode() {
+    const code = (document.getElementById('passcode-input').value || '').trim();
+    if (!code) return;
+    localStorage.setItem('gw-staff-key', code);
+    try { await staffApi('/staff-customers?action=search&q=__verify__'); hidePasscodeGate(); }
+    catch (e) { /* staffApi re-opens the gate with an error message */ }
+  }
+
+  // ── CUSTOMER AUTOFILL + REORDER (cloud) ──
+  function escHtml(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m])); }
+  let selectedCustomerId = null, clientSearchTimer = null;
+  async function onClientInput() {
+    selectedCustomerId = null;
+    const ro = document.getElementById('reorder-row'); if (ro) ro.style.display = 'none';
+    const q = document.getElementById('client').value.trim();
+    const box = document.getElementById('client-suggest');
+    if (clientSearchTimer) clearTimeout(clientSearchTimer);
+    if (q.length < 2 || !staffKey()) { box.style.display = 'none'; return; }
+    clientSearchTimer = setTimeout(async () => {
+      try {
+        const { customers } = await staffApi('/staff-customers?action=search&q=' + encodeURIComponent(q));
+        if (!customers || !customers.length) { box.style.display = 'none'; return; }
+        window._clientResults = customers;
+        box.innerHTML = customers.map((c, i) => `<div data-ci="${i}" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--light);font-size:14px;"><strong>${escHtml(c.name || '(no name)')}</strong>${c.contact_info ? ` · <span style="color:var(--muted)">${escHtml(c.contact_info)}</span>` : ''}</div>`).join('');
+        box.querySelectorAll('[data-ci]').forEach(el => el.onmousedown = (ev) => { ev.preventDefault(); pickCustomer(window._clientResults[+el.dataset.ci]); });
+        box.style.display = 'block';
+      } catch (e) { box.style.display = 'none'; }
+    }, 280);
+  }
+  function pickCustomer(c) {
+    document.getElementById('client').value = c.name || '';
+    const ci = c.contact_info || c.phone || c.email || ''; if (ci) document.getElementById('contact-info').value = ci;
+    if (c.default_location) document.getElementById('location').value = c.default_location;
+    if (c.default_delivery_address) { const da = document.getElementById('delivery-address'); if (da) da.value = c.default_delivery_address; }
+    document.getElementById('client-suggest').style.display = 'none';
+    selectedCustomerId = c.id;
+    const ro = document.getElementById('reorder-row'); if (ro) ro.style.display = 'block';
+  }
+  async function loadLastOrder() {
+    if (!selectedCustomerId) return;
+    try {
+      const { order } = await staffApi('/staff-customers?action=last-order&customerId=' + encodeURIComponent(selectedCustomerId));
+      if (!order) { alert('No previous order found for this customer.'); return; }
+      if (!confirm("Load this customer's last order into a NEW order? The current form will be replaced.")) return;
+      restoreState(order.builder_state || {});
+      currentOrderId = null;  // reorder = a fresh order; don't overwrite the original
+      showTab('form');
+    } catch (e) { if (e.message !== 'unauthorized') alert('Could not load the last order.'); }
+  }
+
+  let fulfillment = 'pickup';
+  let orderType = 'racks';
+  let racks = [], platters = [], boxLunches = [];
+  let fullSubs = [];
+  let rackCount = 0, platterCount = 0, boxCount = 0, fullSubCount = 0;
+
+  const allMeats = [
+    'Ham','Turkey','Roast Beef','Grilled Chicken','Turkey Bacon','Italian','Spicy Italian','Buffalo Chicken Breast','Buffalo Chicken Salad',
+    'Tuna Salad','Salad Sammy (Vegetarian)','Salad Sammy (Vegan)','Chicken Caesar Wrap',
+    'Cool Ranch Rider','Da Beast','Juicy Tree Climber','The Brycer','Ultimate Italian','Big Beach','Spice Melange','E-Z Buzz','Funny You Should Ask'
+  ];
+
+  // Old names saved in drafts → their current menu equivalent (keeps old orders loading).
+  const LEGACY_TYPES = { 'Salad Sammie': 'Salad Sammy (Vegetarian)', 'Salad Sammy': 'Salad Sammy (Vegetarian)' };
+
+  function meatOptions(extraList) {
+    const list = extraList ? allMeats.concat(extraList) : allMeats;
+    return list.map(m => `<option value="${m}">${m}</option>`).join('');
+  }
+
+  // Salad dressings = the full Gateway sauce list (the 3 favorites first for speed).
+  // Names match the Sauces section so the kitchen sheet's sauce tally adds up.
+  const dressings = [
+    'Ranch','Balsamic','Creamy Caesar','Hot Honey','Hot Garlic Buffalo','Sub Sauce',
+    'Horseradish Aioli','Spicy Ranch','Sweet Sauce','Chipotle Mayo','Sweet Tang'
+  ];
+
+  function dressingOptions() {
+    return dressings.map(d => `<option value="${d}">${d}</option>`).join('');
+  }
+
+  // ── TAB SWITCHING ──
+  function showTab(tab) {
+    ['form','preview','drafts'].forEach(t => {
+      document.getElementById('tab-' + t).style.display = tab === t ? 'block' : 'none';
+      document.getElementById('tabbtn-' + t).classList.toggle('active', tab === t);
+    });
+    if (tab === 'drafts') renderDrafts();
+  }
+
+  // ── COUNTER ──
+  function adj(id, delta) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = Math.max(0, parseInt(el.textContent) + delta);
+  }
+
+  // ── SALAD COUNTER — builds individual dressing rows ──
+  function adjSalad(id, delta) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const oldVal = parseInt(el.textContent) || 0;
+    const newVal = Math.max(0, oldVal + delta);
+    el.textContent = newVal;
+    const isChicken = id === 'side-salad-chicken';
+    const containerId = isChicken ? 'salad-chicken-rows-container' : 'salad-rows-container';
+    const wrapId = isChicken ? 'salad-chicken-rows-wrap' : 'salad-rows-wrap';
+    const container = document.getElementById(containerId);
+    const wrap = document.getElementById(wrapId);
+    wrap.style.display = newVal > 0 ? 'block' : 'none';
+
+    const rows = container.querySelectorAll('.salad-row');
+    if (delta > 0) {
+      // Add a row
+      const rowNum = rows.length + 1;
+      const rowId = id + '-row-' + rowNum;
+      const div = document.createElement('div');
+      div.className = 'salad-row';
+      div.id = rowId;
+      div.style.cssText = 'background:var(--light);border-radius:8px;padding:10px 12px;margin-bottom:8px;border:1px solid var(--border);';
+      div.innerHTML = `
+        <div style="font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:12px;letter-spacing:1px;text-transform:uppercase;color:var(--blue);margin-bottom:8px;">
+          ${isChicken ? 'Chicken Salad' : 'Salad'} ${rowNum}
+        </div>
+        <div class="field" style="margin-bottom:6px;">
+          <label>Dressing</label>
+          <select id="${rowId}-dressing">${dressingOptions()}</select>
+        </div>
+        <button class="note-toggle-btn" onclick="toggleInlineNote('${rowId}-note')">💬 Note</button>
+        <div class="inline-note" id="${rowId}-note" style="margin-top:4px;">
+          <input type="text" placeholder="Special request for this salad...">
+        </div>
+      `;
+      container.appendChild(div);
+    } else {
+      // Remove last row
+      if (rows.length > 0) rows[rows.length - 1].remove();
+    }
+  }
+
+  function readSaladRows(idPrefix) {
+    const isChicken = idPrefix === 'side-salad-chicken';
+    const containerId = isChicken ? 'salad-chicken-rows-container' : 'salad-rows-container';
+    const container = document.getElementById(containerId);
+    if (!container) return [];
+    return Array.from(container.querySelectorAll('.salad-row')).map(row => ({
+      dressing: row.querySelector('select')?.value || '',
+      note: row.querySelector('input[type="text"]')?.value?.trim() || ''
+    }));
+  }
+  function getVal(id) {
+    const el = document.getElementById(id);
+    if (!el) return 0;
+    // Support both counter spans (textContent) and number inputs (value)
+    if (el.tagName === 'INPUT') return parseInt(el.value) || 0;
+    return parseInt(el.textContent) || 0;
+  }
+
+  // ── FULFILLMENT ──
+  function setFulfillment(type) {
+    fulfillment = type;
+    document.getElementById('btn-pickup').classList.toggle('active', type === 'pickup');
+    document.getElementById('btn-delivery').classList.toggle('active', type === 'delivery');
+    document.getElementById('delivery-address-wrap').style.display = type === 'delivery' ? 'flex' : 'none';
+  }
+
+  // ── ORDER TYPE ──
+  function setOrderType(type) {
+    orderType = type;
+    document.getElementById('section-racks').style.display = type === 'racks' ? 'block' : 'none';
+    document.getElementById('section-boxlunch').style.display = type === 'boxlunch' ? 'block' : 'none';
+    document.getElementById('section-fullsubs').style.display = type === 'fullsubs' ? 'block' : 'none';
+    document.getElementById('obtn-racks').classList.toggle('active', type === 'racks');
+    document.getElementById('obtn-boxlunch').classList.toggle('active', type === 'boxlunch');
+    document.getElementById('obtn-fullsubs').classList.toggle('active', type === 'fullsubs');
+  }
+
+  // ── FULL SUBS (whole subs; each pre-loads its real menu build so staff just tap to change) ──
+  // Builds pulled from order.gatewaysubs.com.
+  const SUB_RECIPES = {
+    'Cool Ranch Rider': ['Buffalo Chicken','Bacon','Mayo','Provolone','Lettuce','Onion','Hot Peppers','Cool Ranch Doritos','Hot Honey','Hot Garlic Buffalo'],
+    'Da Beast': ['Roast Beef','Mayo','Swiss','Onion','Hot Peppers','Banana Peppers','Horseradish Aioli','Toasted'],
+    'The Brycer': ['Buffalo Chicken Salad','Buffalo Chicken','Mayo','Provolone','Lettuce','Onion','Sweet Peppers','Hot Peppers','Jalapeño Chips','Spicy Ranch'],
+    'E-Z Buzz': ['Pepperoni','Buffalo Chicken','Bacon','Provolone','Spinach','Onion','Sweet Peppers','Chipotle Mayo','Sweet Tang','Purple Doritos'],
+    'Spice Melange': ['Hot Capicola','Buffalo Chicken','Mayo','Provolone','Lettuce','Onion','Hot Peppers','Jalapeño Chips','Hot Garlic Buffalo'],
+    'Hail Caesar': ['Grilled Chicken','Lettuce','Onion','Creamy Caesar','Sea Salt Chips','On Wrap'],
+    'Juicy Tree Climber': ['Pepperoni','Salami','Buffalo Chicken','Mayo','Provolone','Lettuce','Onion','Pickles','Sweet Peppers','Sweet Secret','Sub Sauce','Toasted'],
+    'Ultimate Italian': ['Salami','Pepperoni','Hot Capicola','Ham','Mayo','Provolone','Lettuce','Tomato','Onion','Black Olives','Banana Peppers','Sub Sauce'],
+    'Big Beach': ['Ham','Turkey','Roast Beef','Mayo','Provolone','Lettuce','Tomato','Onion'],
+    'Funny You Should Ask': ['Salami','Hot Capicola','Ham','Mayo','Provolone','Lettuce','Tomato','Onion'],
+    'Salad Sammy (Vegetarian)': ['Avocado Spread','Provolone','Spinach','Lettuce','Tomato','Onion','Cucumber','Black Olives','Balsamic'],
+    'Salad Sammy (Vegan)': ['Avocado Spread','Spinach','Lettuce','Tomato','Onion','Cucumber','Black Olives','Balsamic'],
+    'Spicy Italian': ['Pepperoni','Hot Capicola','Ham','Mayo','Provolone','Lettuce','Tomato','Onion','Hot Peppers'],
+    'Italian': ['Salami','Pepperoni','Ham','Mayo','Provolone','Lettuce','Tomato','Onion'],
+    'Turkey Bacon': ['Turkey','Bacon','Lettuce','Tomato','Onion','Provolone','Mayo'],
+    'Plain Jane (BYO)': ['Mayo','Provolone','Lettuce','Tomato','Onion'],
+    'Ham': ['Ham','Mayo','Provolone','Lettuce','Tomato','Onion'],
+    'Turkey': ['Turkey','Mayo','Provolone','Lettuce','Tomato','Onion'],
+    'Roast Beef': ['Roast Beef','Mayo','Provolone','Lettuce','Tomato','Onion'],
+    'Buffalo Chicken Breast': ['Buffalo Chicken Breast','Mayo','Provolone','Lettuce','Tomato','Onion'],
+    'Tuna Salad': ['Tuna Salad','Mayo','Provolone','Lettuce','Tomato','Onion'],
+    'Grilled Chicken': ['Grilled Chicken','Mayo','Provolone','Lettuce','Tomato','Onion'],
+  };
+  const SUB_EXTRAS = ['Bacon','Extra Meat','Provolone','Swiss','Avocado Spread','Lettuce','Tomato','Onion','Spinach','Cucumber','Pickles','Hot Peppers','Sweet Peppers','Banana Peppers','Black Olives','Mayo','Mustard','Oil','Vinegar','Sub Sauce','Hot Honey','Hot Garlic Buffalo','Creamy Caesar','Horseradish Aioli','Spicy Ranch','Chipotle Mayo','Sweet Tang','Ranch','Balsamic','Toasted'];
+
+  function fullSubOptions() {
+    return Object.keys(SUB_RECIPES).map(s => `<option value="${s}">${s}</option>`).join('');
+  }
+
+  function addFullSub() {
+    fullSubCount++;
+    const id = `fsub-${fullSubCount}`;
+    fullSubs.push(id);
+    const div = document.createElement('div');
+    div.className = 'item-card';
+    div.id = id;
+    div.innerHTML = `
+      <div class="item-card-header">
+        <span class="item-card-title">Full Sub ${fullSubCount}</span>
+        <button class="remove-btn" onclick="removeItem('${id}', fullSubs)">✕ Remove</button>
+      </div>
+      <div class="row2" style="margin-bottom:12px;">
+        <div class="field" style="margin-bottom:0;">
+          <label>Sub</label>
+          <select id="${id}-type" onchange="onFullSubType('${id}')">${fullSubOptions()}</select>
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Qty</label>
+          <input type="number" id="${id}-qty" value="1" min="1" inputmode="numeric" style="text-align:center;">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:10px;">
+        <label>Bread / Wrap</label>
+        <select id="${id}-bread">
+          <option value="White Hoagie">White Hoagie</option>
+          <option value="Wheat Hoagie">Wheat Hoagie</option>
+          <option value="Flour Wrap">Flour Wrap</option>
+          <option value="Spinach Wrap">Spinach Wrap</option>
+          <option value="Lettuce Wrap">Lettuce Wrap</option>
+          <option value="Gluten-Free Wrap">Gluten-Free Wrap</option>
+          <option value="Salad">Make it a Salad</option>
+        </select>
+      </div>
+      <label class="fsub-rack"><input type="checkbox" id="${id}-rack"> Rack style (cut ⅓)</label>
+      <div class="sub-label">Comes with — tap to remove</div>
+      <div id="${id}-ings" class="ing-chips"></div>
+      <button class="section-note-toggle" onclick="toggleExtras('${id}')">+ Add extra</button>
+      <div id="${id}-extras" class="ing-chips" style="display:none;"></div>
+      <div class="section-note-wrap" style="margin-top:10px;">
+        <button class="section-note-toggle" onclick="toggleSectionNote('${id}-card-note')">+ Add note for this sub</button>
+        <textarea class="section-note-input" id="${id}-card-note" placeholder="e.g. extra crispy, cut in half..."></textarea>
+      </div>
+    `;
+    document.getElementById('fullsubs-container').appendChild(div);
+    onFullSubType(id);
+  }
+
+  // Render a sub's default ingredients (tap to remove) + the extras palette (tap to add).
+  function onFullSubType(id) {
+    const type = document.getElementById(id + '-type').value;
+    const ings = SUB_RECIPES[type] || [];
+    const box = document.getElementById(id + '-ings');
+    if (box) box.innerHTML = ings.map(i => `<button type="button" class="ing-chip" onclick="this.classList.toggle('removed')">${escHtml(i)}</button>`).join('');
+    const ex = document.getElementById(id + '-extras');
+    if (ex) ex.innerHTML = SUB_EXTRAS.filter(e => !ings.includes(e)).map(e => `<button type="button" class="ing-chip" onclick="this.classList.toggle('added')">${escHtml(e)}</button>`).join('');
+  }
+
+  function toggleExtras(id) {
+    const ex = document.getElementById(id + '-extras');
+    if (ex) ex.style.display = ex.style.display === 'none' ? 'flex' : 'none';
+  }
+
+  // Read one full sub into the canonical shape (used by captureState + the order sheet).
+  function readFullSub(id) {
+    return {
+      type: document.getElementById(id + '-type')?.value || '',
+      qty: document.getElementById(id + '-qty')?.value || '1',
+      bread: document.getElementById(id + '-bread')?.value || 'White Hoagie',
+      rackStyle: !!document.getElementById(id + '-rack')?.checked,
+      removed: Array.from(document.querySelectorAll('#' + id + '-ings .ing-chip.removed')).map(c => c.textContent),
+      added: Array.from(document.querySelectorAll('#' + id + '-extras .ing-chip.added')).map(c => c.textContent),
+      note: document.getElementById(id + '-card-note')?.value || '',
+    };
+  }
+
+  // Free type-in for genuinely off-menu items (GF cookie, one-off wrap, etc.).
+  function addCustomFullSub() {
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px;';
+    wrap.innerHTML = `
+      <input type="number" value="1" min="1" inputmode="numeric" class="fsub-custom-qty" style="width:56px;border:1.5px solid var(--border);border-radius:8px;padding:10px 6px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;color:var(--text);">
+      <input type="text" class="fsub-custom-input" placeholder="e.g. GF cookie, off-menu wrap..." style="flex:1;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:16px;font-family:'Barlow',sans-serif;color:var(--text);">
+      <button onclick="this.parentElement.remove()" style="background:none;border:1px solid #fcc;color:var(--red);border-radius:6px;padding:8px 10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif;">✕</button>
+    `;
+    document.getElementById('fullsub-custom-container').appendChild(wrap);
+    wrap.querySelector('.fsub-custom-input').focus();
+  }
+
+  // ── SANDWICH ROW ──
+  // Box-lunch rows also get a per-sandwich chip picker (each box comes with a bag of chips).
+  const BOX_CHIP_FLAVORS = ['Cool Ranch Doritos','Spicy Sweet Chili Doritos','BBQ','Salt & Vinegar','Sea Salt','Jalapeño','Voodoo','Cheddar & Sour Cream','No Chips'];
+  let swRowSeq = 0;   // uniquifies row ids (Date.now() alone can collide when restoring many rows)
+  function addSandwichRow(parentId) {
+    const container = document.getElementById(parentId + '-sandwiches');
+    const rowId = `${parentId}-sw-${Date.now()}-${++swRowSeq}`;
+    const isBox = parentId.startsWith('box-');
+    const chipSel = isBox
+      ? `<select id="${rowId}-chip" style="border:1.5px solid var(--border);border-radius:8px;padding:7px 26px 7px 9px;font-size:13px;font-family:'Barlow',sans-serif;color:var(--text);flex:1 1 120px;min-width:120px;"><option value="">Chips…</option>${BOX_CHIP_FLAVORS.map(c => `<option value="${c}">${c}</option>`).join('')}</select>`
+      : '';
+    // Name label for a box lunch — prints as its own checkbox line, never mixed into the notes.
+    const nameInput = isBox
+      ? `<input type="text" id="${rowId}-name" placeholder="Name (box label)" style="border:1.5px solid var(--border);border-radius:8px;padding:7px 9px;font-size:13px;font-family:'Barlow',sans-serif;color:var(--text);flex:1 1 110px;min-width:110px;">`
+      : '';
+    const wrapper = document.createElement('div');
+    wrapper.id = rowId + '-wrap';
+    wrapper.innerHTML = `
+      <div class="sandwich-row" id="${rowId}">
+        <input type="number" value="1" min="1" inputmode="numeric" placeholder="Qty">
+        <select>${meatOptions()}</select>
+        <button class="del-row-btn" onclick="document.getElementById('${rowId}-wrap').remove()">✕</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;padding:0 0 6px 0;flex-wrap:wrap;">
+        <button class="note-toggle-btn" onclick="toggleInlineNote('${rowId}-note')">💬 Note</button>
+        ${nameInput}
+        ${chipSel}
+        <div class="inline-note" id="${rowId}-note" style="flex:1 1 100%;"><input type="text" placeholder="Special request for this item..."></div>
+      </div>
+    `;
+    container.appendChild(wrapper);
+  }
+
+  function readSandwichRows(parentId) {
+    const container = document.getElementById(parentId + '-sandwiches');
+    if (!container) return [];
+    return Array.from(container.querySelectorAll('.sandwich-row')).map(row => {
+      const noteWrap = document.getElementById(row.id + '-note');
+      const noteInput = noteWrap ? noteWrap.querySelector('input[type="text"]') : null;
+      const note = noteInput ? noteInput.value.trim() : '';
+      const qtyInput = row.querySelector('input[type="number"]');
+      return {
+        qty: parseInt(qtyInput?.value) || 1,
+        type: row.querySelector('select')?.value || '',
+        chip: document.getElementById(row.id + '-chip')?.value || '',
+        name: document.getElementById(row.id + '-name')?.value.trim() || '',
+        note
+      };
+    }).filter(r => r.type);
+  }
+
+  // ── RACK ──
+  function addRack() {
+    rackCount++;
+    const id = `rack-${rackCount}`;
+    racks.push(id);
+    const div = document.createElement('div');
+    div.className = 'item-card';
+    div.id = id;
+    div.innerHTML = `
+      <div class="item-card-header">
+        <span class="item-card-title">Rack ${rackCount}</span>
+        <button class="remove-btn" onclick="removeItem('${id}', racks)">✕ Remove</button>
+      </div>
+      <div class="row2" style="margin-bottom:12px;">
+        <div class="field" style="margin-bottom:0;">
+          <label>Rack Size</label>
+          <input type="number" id="${id}-size" value="30" min="1" max="150" inputmode="numeric" placeholder="e.g. 30" style="text-align:center;">
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Qty</label>
+          <input type="number" id="${id}-qty" value="1" min="1" inputmode="numeric" style="text-align:center;">
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:12px;">
+        <label>Cut</label>
+        <select id="${id}-cut">
+          <option value="Thirds" selected>Cut in ⅓</option>
+          <option value="Halves">Cut in ½</option>
+          <option value="Quarters">Cut in ¼</option>
+          <option value="Full">Full subs</option>
+        </select>
+      </div>
+      <div class="sub-label">Sandwich Types</div>
+      <div id="${id}-sandwiches"></div>
+      <button class="add-sandwich-btn" onclick="addSandwichRow('${id}')">+ Add Sandwich Type</button>
+      <div class="section-note-wrap" style="margin-top:10px;">
+        <button class="section-note-toggle" onclick="toggleSectionNote('${id}-card-note')">+ Add note for this rack</button>
+        <textarea class="section-note-input" id="${id}-card-note" placeholder="e.g. Rack 2 is for the vegetarians..."></textarea>
+      </div>
+    `;
+    document.getElementById('racks-container').appendChild(div);
+    addSandwichRow(id);
+  }
+
+  // ── PLATTER ──
+  function addPlatter() {
+    platterCount++;
+    const id = `platter-${platterCount}`;
+    platters.push(id);
+    const div = document.createElement('div');
+    div.className = 'item-card';
+    div.id = id;
+    div.innerHTML = `
+      <div class="item-card-header">
+        <span class="item-card-title" id="${id}-label">Platter</span>
+        <button class="remove-btn" onclick="removeItem('${id}', platters)">✕ Remove</button>
+      </div>
+      <div class="row2" style="margin-bottom:12px;">
+        <div class="field" style="margin-bottom:0;">
+          <label>Size</label>
+          <select id="${id}-size">
+            <option value="Small">Small (4–6)</option>
+            <option value="Large">Large (8–12)</option>
+          </select>
+        </div>
+        <div class="field" style="margin-bottom:0;">
+          <label>Qty</label>
+          <input type="number" id="${id}-qty" value="1" min="1" inputmode="numeric" style="text-align:center;">
+        </div>
+      </div>
+      <div class="sub-label">Sandwich Types</div>
+      <div id="${id}-sandwiches"></div>
+      <button class="add-sandwich-btn" onclick="addSandwichRow('${id}')">+ Add Sandwich Type</button>
+      <div class="section-note-wrap" style="margin-top:10px;">
+        <button class="section-note-toggle" onclick="toggleSectionNote('${id}-card-note')">+ Add note for this platter</button>
+        <textarea class="section-note-input" id="${id}-card-note" placeholder="e.g. Platter 1 is gluten-free only..."></textarea>
+      </div>
+    `;
+    document.getElementById('platters-container').appendChild(div);
+    reNumberPlatters();
+    addSandwichRow(id);
+  }
+
+  function reNumberPlatters() {
+    platters.filter(id => document.getElementById(id)).forEach((id, i) => {
+      const label = document.getElementById(id + '-label');
+      if (label) label.textContent = `Platter ${i + 1}`;
+    });
+  }
+
+  // ── BOX LUNCH ──
+  function addBoxLunch() {
+    boxCount++;
+    const id = `box-${boxCount}`;
+    boxLunches.push(id);
+    const div = document.createElement('div');
+    div.className = 'item-card';
+    div.id = id;
+    div.innerHTML = `
+      <div class="item-card-header">
+        <span class="item-card-title">Box Lunch ${boxCount}</span>
+        <button class="remove-btn" onclick="removeItem('${id}', boxLunches)">✕ Remove</button>
+      </div>
+      <div class="sub-label">Sandwich Selection</div>
+      <div id="${id}-sandwiches"></div>
+      <button class="add-sandwich-btn" onclick="addSandwichRow('${id}')">+ Add Sandwich</button>
+      <div class="section-note-wrap" style="margin-top:10px;">
+        <button class="section-note-toggle" onclick="toggleSectionNote('${id}-card-note')">+ Add note for this box lunch</button>
+        <textarea class="section-note-input" id="${id}-card-note" placeholder="e.g. No mayo on these..."></textarea>
+      </div>
+    `;
+    document.getElementById('boxlunch-container').appendChild(div);
+    addSandwichRow(id);
+  }
+
+  function removeItem(id, arr) {
+    const idx = arr.indexOf(id);
+    if (idx > -1) arr.splice(idx, 1);
+    const el = document.getElementById(id);
+    if (el) el.remove();
+    // Re-number platters live
+    reNumberPlatters();
+  }
+
+  function getChip(id) {
+    const el = document.getElementById(id);
+    return el ? parseInt(el.value) || 0 : 0;
+  }
+
+  // ── UTENSIL CALC ──
+  function calcUtensilsAuto() {
+    const headcount = parseInt(document.getElementById('headcount').value) || 0;
+    const sauceIds = ['s-hothooney','s-buffalo','s-caesar','s-subsauce','s-horseradish','s-spicyranch','s-sweet','s-chipotle','s-sweettang','s-ranch','s-balsamic'];
+    const vegIds = ['v-hotpeppers','v-sweetpeppers','v-banana','v-olives','v-spinach','v-cucumber','v-pickles'];
+    let spoons = sauceIds.reduce((a,id) => a + getVal(id), 0) + vegIds.reduce((a,id) => a + getVal(id), 0);
+    const salads = getVal('side-salad') + getVal('side-salad-chicken');
+    // 1 spoon per dressing row that has a dressing selected
+    const allSaladRowDressings = [
+      ...Array.from(document.querySelectorAll('#salad-rows-container .salad-row select')),
+      ...Array.from(document.querySelectorAll('#salad-chicken-rows-container .salad-row select'))
+    ].filter(el => el.value).length;
+    spoons += allSaladRowDressings;
+    // 1 spoon per custom side
+    const customSideCount = document.querySelectorAll('.custom-side-input').length;
+    const filledCustomSides = Array.from(document.querySelectorAll('.custom-side-input')).filter(el => el.value.trim()).length;
+    spoons += filledCustomSides;
+
+    // Plates & forks: headcount if set, else 8 x number of salads
+    const perSalad = headcount > 0 ? headcount : (8 * salads);
+    const forks = salads > 0 ? perSalad : 0;
+    const plates = salads > 0 ? perSalad : 0;
+    const totalPlates = plates;
+
+    const tongs = salads;
+    const gallons = getVal('d-gallon-sweet') + getVal('d-gallon-unsweet') + getVal('d-gallon-coldbrew') + getVal('d-lemonade');
+    const cups = gallons > 0 ? (headcount > 0 ? headcount : 8 * Math.max(salads, 1)) : 0;
+
+    // Cheesecake: 1 fork + 1 plate per slice, 10 forks + 10 plates per whole
+    const cheesecakeSlices = getVal('cheesecake-slice');
+    const cheesecakeWhole = getVal('cheesecake-whole');
+    const cheesecakeForks = cheesecakeSlices + (cheesecakeWhole * 10);
+    const cheesecakePlates = cheesecakeSlices + (cheesecakeWhole * 10);
+    // Napkins only when there's non-box food — box lunches already include napkins (and
+    // mayo/mustard) inside each box, so a box-only order prints NO supplies section.
+    const hasNonBoxFood = racks.some(id => document.getElementById(id)) ||
+      platters.some(id => document.getElementById(id)) ||
+      fullSubs.some(id => document.getElementById(id)) || salads > 0;
+    const napkins = hasNonBoxFood ? (headcount > 0 ? headcount : (salads > 0 ? salads * 8 : 20)) : 0;
+
+    // Box lunches excluded — mayo/mustard internally included
+    let totalSubs = 0;
+    racks.filter(id => document.getElementById(id)).forEach(id => {
+      totalSubs += (parseInt(document.getElementById(id+'-size')?.value) || 0) * (parseInt(document.getElementById(id+'-qty')?.value) || 1);
+    });
+    platters.filter(id => document.getElementById(id)).forEach(id => {
+      totalSubs += 24 * (parseInt(document.getElementById(id+'-qty')?.value) || 1);
+    });
+
+    const mayo = totalSubs > 0 ? Math.round(totalSubs * 0.667) : 0;
+    const mustard = totalSubs > 0 ? Math.round(totalSubs * 0.333) : 0;
+    const totalForksAll = forks + cheesecakeForks;
+    const totalPlatesAll = totalPlates + cheesecakePlates;
+    return { plates: totalPlatesAll, forks: totalForksAll, spoons, cups, tongs, napkins, mayo, mustard };
+  }
+
+  // ── SUPPLIES: smart auto-default vs. manual override ──
+  // Every supply auto-calculates. Staff can type an exact number (including 0) in the
+  // Supplies & Condiments section to override any of them — blank field keeps the auto value.
+  function supplyOverride(id, autoVal) {
+    const el = document.getElementById(id);
+    if (!el) return autoVal;
+    const raw = (el.value || '').trim();
+    if (raw === '') return autoVal;
+    const n = parseInt(raw, 10);
+    return isNaN(n) ? autoVal : Math.max(0, n);
+  }
+  function isSupplyOverridden(id) {
+    const el = document.getElementById(id);
+    return !!(el && (el.value || '').trim() !== '');
+  }
+  function calcUtensils() {
+    const a = calcUtensilsAuto();
+    return {
+      plates: supplyOverride('sup-plates', a.plates),
+      forks: supplyOverride('sup-forks', a.forks),
+      spoons: supplyOverride('sup-spoons', a.spoons),
+      cups: supplyOverride('sup-cups', a.cups),
+      tongs: supplyOverride('sup-tongs', a.tongs),
+      napkins: supplyOverride('sup-napkins', a.napkins),
+      mayo: supplyOverride('sup-mayo', a.mayo),
+      mustard: supplyOverride('sup-mustard', a.mustard),
+      napkinsOverridden: isSupplyOverridden('sup-napkins'),
+    };
+  }
+  // Show the live auto values as placeholders so staff see the default they'd be overriding.
+  function refreshSupplyPlaceholders() {
+    const a = calcUtensilsAuto();
+    const map = { 'sup-mayo': a.mayo, 'sup-mustard': a.mustard, 'sup-napkins': a.napkins,
+      'sup-tongs': a.tongs, 'sup-plates': a.plates, 'sup-forks': a.forks,
+      'sup-spoons': a.spoons, 'sup-cups': a.cups };
+    Object.entries(map).forEach(([id, v]) => { const el = document.getElementById(id); if (el) el.placeholder = 'auto: ' + v; });
+  }
+
+  // How each tray's subs are cut — shown on the kitchen sheet.
+  function cutLabel(id) {
+    const v = document.getElementById(id + '-cut')?.value || 'Full';
+    return v === 'Thirds' ? 'Cut in ⅓' : v === 'Halves' ? 'Cut in ½' : v === 'Quarters' ? 'Cut in ¼' : 'Full subs';
+  }
+  // Racks are cut in ⅓ by default ("rack style"). Only note it on the sheet when it deviates.
+  function rackCutNote(id) {
+    const v = document.getElementById(id + '-cut')?.value || 'Thirds';
+    if (v === 'Thirds') return '';
+    if (v === 'Halves') return 'Rack style, but cut into ½ instead of ⅓';
+    if (v === 'Quarters') return 'Rack style, but cut into ¼ instead of ⅓';
+    return 'Rack style, but left as full subs instead of ⅓';
+  }
+
+  // ── GENERATE ──
+  function generateOrder() {
+    const client = document.getElementById('client').value || '';
+    const location = document.getElementById('location').value || '';
+    const contactInfo = document.getElementById('contact-info')?.value || '';
+    const dateVal = document.getElementById('order-date').value;
+    const dateObj = dateVal ? new Date(dateVal + 'T00:00:00') : null;
+    const dateShort = dateObj ? dateObj.toLocaleDateString('en-US',{month:'numeric',day:'numeric',year:'2-digit'}) : '';
+    const dayOfWeek = dateObj ? dateObj.toLocaleDateString('en-US',{weekday:'long'}) : '';
+    const readyTime = formatTime(document.getElementById('ready-time').value);
+    const pickupTime = formatTime(document.getElementById('pickup-time').value);
+    const deliveryAddress = document.getElementById('delivery-address').value || '';
+    const headcount = document.getElementById('headcount').value || '';
+    const notes = document.getElementById('order-notes').value;
+    const prep = (document.getElementById('prep-notes')?.value || '').trim();
+    const cookies = parseInt(document.getElementById('cookies-qty').value) || 0;
+    const u = calcUtensils();
+
+    // Header line 1: Date / Location
+    const headerLine1 = [dateShort, location].filter(Boolean).join(' / ') || location || dateShort || 'New Order';
+    // Header line 2: Day of week + times
+    const timeParts = [
+      dayOfWeek,
+      readyTime ? 'Complete by ' + readyTime : '',
+      pickupTime ? (fulfillment === 'pickup' ? 'Pickup @ ' : 'Delivery @ ') + pickupTime : ''
+    ].filter(Boolean);
+    const headerLine2 = timeParts.join(' · ');
+    // Header line 3: Client + contact
+    const headerLine3 = [client, contactInfo].filter(Boolean).join(' · ');
+
+    let html = `<div class="sheet-header">
+      <h2>${headerLine1}</h2>
+      ${headerLine2 ? `<div class="sheet-meta">${headerLine2}</div>` : ''}
+      ${deliveryAddress ? `<div class="sheet-meta" style="margin-top:2px;">Delivery to: ${deliveryAddress}</div>` : ''}
+      ${headerLine3 ? `<div class="sheet-meta" style="margin-top:2px;font-size:12px;">${headerLine3}</div>` : ''}
+      ${headcount ? `<div class="sheet-badges"><span class="badge-pill">${headcount} People</span></div>` : ''}
+    </div><div class="sheet-body">`;
+
+    // RACKS
+    const activeRacks = racks.filter(id => document.getElementById(id));
+    if (activeRacks.length > 0) {
+      html += `<div class="sheet-section"><div class="sheet-section-title">Racks</div>`;
+      activeRacks.forEach(id => {
+        const size = document.getElementById(id+'-size')?.value || '';
+        const qty = document.getElementById(id+'-qty')?.value || '1';
+        const rcut = rackCutNote(id);
+        html += `<div class="sheet-item"><span class="sheet-qty">${qty}x</span><span class="sheet-name"><strong>${size} Rack</strong>${rcut ? ` <span style="color:var(--blue);font-weight:600;">· ${rcut}</span>` : ''}</span></div>`;
+        readSandwichRows(id).forEach(s => {
+          html += `<div class="sheet-sub">- ${s.qty}x ${s.type}${s.note ? ' <em style="color:var(--gold);font-size:11px;">(' + s.note + ')</em>' : ''}</div>`;
+        });
+        const cardNote = document.getElementById(id + '-card-note')?.value?.trim();
+        if (cardNote) html += `<div class="sheet-sub" style="color:var(--blue);font-style:italic;">Note: ${cardNote}</div>`;
+      });
+      html += `</div>`;
+    }
+
+    // PLATTERS - live-numbered, include size
+    const activePlatters = platters.filter(id => document.getElementById(id));
+    if (activePlatters.length > 0) {
+      html += `<div class="sheet-section"><div class="sheet-section-title">Pretty Platters</div>`;
+      activePlatters.forEach((id, i) => {
+        const size = document.getElementById(id+'-size')?.value || '';
+        const qty = document.getElementById(id+'-qty')?.value || '1';
+        html += `<div class="sheet-item"><span class="sheet-qty">${qty}x</span><span class="sheet-name"><strong>Platter</strong>${size ? ' - ' + size : ''}</span></div>`;
+        readSandwichRows(id).forEach(s => {
+          html += `<div class="sheet-sub">- ${s.qty}x ${s.type}${s.note ? ' <em style="color:var(--gold);font-size:11px;">(' + s.note + ')</em>' : ''}</div>`;
+        });
+        const cardNote = document.getElementById(id + '-card-note')?.value?.trim();
+        if (cardNote) html += `<div class="sheet-sub" style="color:var(--blue);font-style:italic;">Note: ${cardNote}</div>`;
+      });
+      html += `</div>`;
+    }
+
+    // BOX LUNCHES
+    const activeBoxes = boxLunches.filter(id => document.getElementById(id));
+    if (activeBoxes.length > 0) {
+      html += `<div class="sheet-section"><div class="sheet-section-title">Box Lunches</div>`;
+      // Group by sandwich type (Hudi's rule): ONE line per type ("2x Ham Box Lunches"),
+      // with the chip picks + per-sandwich notes listed underneath — never one line per box.
+      // Box lunches are always half subs, so no cut is printed.
+      const boxGroups = [];
+      const boxCardNotes = [];
+      activeBoxes.forEach(id => {
+        readSandwichRows(id).forEach(s => {
+          let grp = boxGroups.find(x => x.type === s.type);
+          if (!grp) { grp = { type: s.type, qty: 0, chips: {}, notes: [], named: [] }; boxGroups.push(grp); }
+          grp.qty += s.qty;
+          if (s.name || s.note) { grp.named.push(s); return; }   // named OR noted boxes get their own line, so notes never float ambiguously
+          if (s.chip) grp.chips[s.chip] = (grp.chips[s.chip] || 0) + s.qty;
+          if (s.note) grp.notes.push((s.qty > 1 ? s.qty + 'x — ' : '') + s.note);
+        });
+        const cardNote = document.getElementById(id + '-card-note')?.value?.trim();
+        if (cardNote) boxCardNotes.push(cardNote);
+      });
+      boxGroups.forEach(grp => {
+        html += `<div class="sheet-item"><span class="sheet-qty">${grp.qty}x</span><span class="sheet-name"><strong>${grp.type} Box Lunch${grp.qty > 1 ? 'es' : ''}</strong></span></div>`;
+        (grp.named || []).forEach(p => {
+          const lead = p.name ? `<strong>${escHtml(p.name)}</strong>${p.qty > 1 ? ' ×' + p.qty : ''}` : `<strong>${p.qty}x</strong>`;
+          const bits = [];
+          if (p.chip) bits.push(escHtml(p.chip));
+          if (p.note) bits.push(escHtml(p.note));
+          html += `<div class="sheet-sub sheet-sub-check">${lead}${bits.length ? ' — ' + bits.join(' · ') : ''}</div>`;
+        });
+        const chipLine = Object.entries(grp.chips).map(([name, n]) => `${n}x ${name}`).join(' · ');
+        if (chipLine) html += `<div class="sheet-sub">Chips: ${chipLine}</div>`;
+        grp.notes.forEach(n => { html += `<div class="sheet-sub"><em style="color:var(--gold);">${n}</em></div>`; });
+      });
+      boxCardNotes.forEach(cn => { html += `<div class="sheet-sub" style="color:var(--blue);font-style:italic;">Note: ${cn}</div>`; });
+      html += `</div>`;
+    }
+
+    // FULL SUBS (+ custom off-menu items)
+    const activeFullSubs = fullSubs.filter(id => document.getElementById(id));
+    const customFullSubs = Array.from(document.querySelectorAll('#fullsub-custom-container > div'))
+      .map(d => ({ qty: d.querySelector('.fsub-custom-qty')?.value || '1', text: (d.querySelector('.fsub-custom-input')?.value || '').trim() }))
+      .filter(x => x.text);
+    if (activeFullSubs.length > 0 || customFullSubs.length > 0) {
+      html += `<div class="sheet-section"><div class="sheet-section-title">Full Subs</div>`;
+      activeFullSubs.forEach(id => {
+        const fs = readFullSub(id);
+        let suffix = '';
+        if (fs.bread && fs.bread !== 'White Hoagie') suffix += ` <span style="color:var(--blue);font-weight:600;">— ${fs.bread === 'Salad' ? 'as a salad' : 'on a ' + fs.bread.toLowerCase()}</span>`;
+        if (fs.rackStyle) suffix += ` <span style="color:var(--blue);font-weight:600;">— rack style (cut ⅓)</span>`;
+        html += `<div class="sheet-item"><span class="sheet-qty">${fs.qty}x</span><span class="sheet-name"><strong>${fs.type}</strong>${suffix}</span></div>`;
+        if (fs.removed.length) html += `<div class="sheet-sub" style="color:var(--red);">No: ${fs.removed.join(', ')}</div>`;
+        if (fs.added.length) html += `<div class="sheet-sub" style="color:var(--green);font-weight:600;">Add: ${fs.added.join(', ')}</div>`;
+        if (fs.note && fs.note.trim()) html += `<div class="sheet-sub" style="color:var(--blue);font-style:italic;">Note: ${escHtml(fs.note.trim())}</div>`;
+      });
+      customFullSubs.forEach(c => {
+        html += `<div class="sheet-item"><span class="sheet-qty">${c.qty}x</span><span class="sheet-name">${escHtml(c.text)}</span></div>`;
+      });
+      html += `</div>`;
+    }
+
+    // SALAD — merged, grilled chicken as checkboxed sub-line
+    const salad = getVal('side-salad'), saladC = getVal('side-salad-chicken');
+    const saladDressing = ''; // now handled per-row
+    const saladChickenDressing = ''; // now handled per-row
+    const totalSalads = salad + saladC;
+    const noteCookies = document.getElementById('note-cookies')?.querySelector('input')?.value?.trim() || '';
+    const saladRows = readSaladRows('side-salad');
+    const saladChickenRows = readSaladRows('side-salad-chicken');
+    if (totalSalads > 0) {
+      html += `<div class="sheet-section"><div class="sheet-section-title">Salad</div>`;
+      if (salad > 0) {
+        html += `<div class="sheet-item"><span class="sheet-qty">${salad}x</span><span class="sheet-name">Garden Salad</span></div>`;
+        saladRows.forEach((r, i) => {
+          if (r.note) html += `<div class="sheet-sub">${r.note}</div>`;
+        });
+      }
+      if (saladC > 0) {
+        html += `<div class="sheet-item"><span class="sheet-qty">${saladC}x</span><span class="sheet-name">Garden Salad</span></div>`;
+        html += `<div class="sheet-sub sheet-sub-check">- ${saladC}x Add 12oz grilled chicken to salad</div>`;
+        saladChickenRows.forEach((r, i) => {
+          if (r.note) html += `<div class="sheet-sub">${r.note}</div>`;
+        });
+      }
+      html += `</div>`;
+    }
+
+    // COOKIES
+    if (cookies > 0) {
+      html += `<div class="sheet-section"><div class="sheet-section-title">Cookies</div>`;
+      html += `<div class="sheet-item"><span class="sheet-qty">${cookies}x</span><span class="sheet-name">Cookies</span></div>`;
+      if (noteCookies) html += `<div class="sheet-sub">${noteCookies}</div>`;
+      html += `</div>`;
+    }
+
+    // CHEESECAKE
+    const cheesecakeSliceOut = getVal('cheesecake-slice');
+    const cheesecakeWholeOut = getVal('cheesecake-whole');
+    if (cheesecakeSliceOut > 0 || cheesecakeWholeOut > 0) {
+      html += `<div class="sheet-section"><div class="sheet-section-title">Cheesecake</div>`;
+      if (cheesecakeSliceOut > 0) html += `<div class="sheet-item"><span class="sheet-qty">${cheesecakeSliceOut}x</span><span class="sheet-name">Cheesecake Slice</span></div>`;
+      if (cheesecakeWholeOut > 0) html += `<div class="sheet-item"><span class="sheet-qty">${cheesecakeWholeOut}x</span><span class="sheet-name">Whole Cheesecake</span></div>`;
+      html += `</div>`;
+    }
+
+    // SAUCES + dressings
+    const sauceMap = {'s-hothooney':'Hot Honey','s-buffalo':'Hot Garlic Buffalo','s-caesar':'Creamy Caesar','s-subsauce':'Sub Sauce','s-horseradish':'Horseradish Aioli','s-spicyranch':'Spicy Ranch','s-sweet':'Sweet Sauce','s-chipotle':'Chipotle Mayo','s-sweettang':'Sweet Tang','s-ranch':'Ranch','s-balsamic':'Balsamic'};
+    const activeSauces = Object.entries(sauceMap).filter(([id]) => getVal(id) > 0);
+    const dressingItems = [];
+    // Collect unique dressings from all salad rows
+    const allDressingCounts = {};
+    [...saladRows, ...saladChickenRows].forEach(r => {
+      if (r.dressing) allDressingCounts[r.dressing] = (allDressingCounts[r.dressing] || 0) + 1;
+    });
+    Object.entries(allDressingCounts).forEach(([dressing, qty]) => {
+      dressingItems.push({qty, label: dressing});
+    });
+    if (activeSauces.length || dressingItems.length) {
+      html += `<div class="sheet-section"><div class="sheet-section-title">Sauces</div>`;
+      activeSauces.forEach(([id,label]) => { html += `<div class="sheet-item"><span class="sheet-qty">${getVal(id)}x</span><span class="sheet-name">${label}</span></div>`; });
+      dressingItems.forEach(d => { html += `<div class="sheet-item"><span class="sheet-qty">${d.qty}x</span><span class="sheet-name">${d.label}</span></div>`; });
+      html += `</div>`;
+    }
+
+    // VEGGIES
+    const vegMap = {'v-hotpeppers':'Hot Peppers','v-sweetpeppers':'Sweet Peppers','v-banana':'Banana Peppers','v-olives':'Black Olives','v-spinach':'Spinach','v-cucumber':'Cucumber','v-pickles':'Pickles'};
+    const activeVeggies = Object.entries(vegMap).filter(([id]) => getVal(id) > 0);
+    if (activeVeggies.length) {
+      html += `<div class="sheet-section"><div class="sheet-section-title">Veggies</div>`;
+      activeVeggies.forEach(([id,label]) => { html += `<div class="sheet-item"><span class="sheet-qty">${getVal(id)}x</span><span class="sheet-name">${label}</span></div>`; });
+      html += `</div>`;
+    }
+
+    // CHIPS
+    const notesChips = document.getElementById('note-chips')?.value?.trim();
+    const chipMap = {'c-coolranch':'Cool Ranch Doritos','c-sweetchilidoritos':'Spicy Sweet Chili Doritos','c-bbq':'BBQ','c-saltvinegar':'Salt & Vinegar','c-seasalt':'Sea Salt','c-jalapeno':'Jalapeño','c-voodoo':'Voodoo','c-cheddar':'Cheddar & Sour Cream'};
+    const activeChips = Object.entries(chipMap).filter(([id]) => getChip(id) > 0);
+    const varietyChips = getChip('c-variety');
+    if (activeChips.length || varietyChips > 0 || notesChips) {
+      html += `<div class="sheet-section"><div class="sheet-section-title">Chips</div>`;
+      activeChips.forEach(([id,label]) => { html += `<div class="sheet-item"><span class="sheet-qty">${getChip(id)}x</span><span class="sheet-name">${label}</span></div>`; });
+      if (varietyChips > 0) html += `<div class="sheet-item"><span class="sheet-qty">${varietyChips}x</span><span class="sheet-name">Variety</span></div>`;
+      if (notesChips) html += `<div class="sheet-sub" style="font-style:italic;color:#555;">${notesChips}</div>`;
+      html += `</div>`;
+    }
+
+    // DRINKS
+    const drinkMap = {'d-water':'Water Bottle','d-pepsi':'Pepsi','d-dietpepsi':'Diet Pepsi','d-starry':'Starry','d-odyssey':'Odyssey Elixir Energy','d-gatorade':'Gatorade','d-sweettea':'Sweet Tea','d-unsweettea':'Unsweet Tea','d-gallon-sweet':'Gallon Sweet Tea','d-gallon-unsweet':'Gallon Unsweet Tea','d-gallon-coldbrew':'Gallon Cold Brew','d-lemonade':'Gallon Lemonade'};
+    const activeDrinks = Object.entries(drinkMap).filter(([id]) => getVal(id) > 0);
+    if (activeDrinks.length) {
+      html += `<div class="sheet-section"><div class="sheet-section-title">Drinks</div>`;
+      activeDrinks.forEach(([id,label]) => { html += `<div class="sheet-item"><span class="sheet-qty">${getVal(id)}x</span><span class="sheet-name">${label}</span></div>`; });
+      html += `</div>`;
+    }
+
+    // CUSTOM SIDES
+    const customSideEls = Array.from(document.querySelectorAll('.custom-side-input')).filter(el => el.value.trim());
+    if (customSideEls.length > 0) {
+      html += `<div class="sheet-section"><div class="sheet-section-title">Custom Sides</div>`;
+      customSideEls.forEach(el => { html += `<div class="sheet-item"><span class="sheet-qty">1x</span><span class="sheet-name">${el.value.trim()}</span></div>`; });
+      html += `</div>`;
+    }
+
+    // SECTION NOTES
+    const notesSauces = document.getElementById('note-sauces')?.value?.trim();
+    const notesVeggies = document.getElementById('note-veggies')?.value?.trim();
+    const notesDrinks = document.getElementById('note-drinks')?.value?.trim();
+    if (notesSauces || notesVeggies || notesDrinks || notes) {
+      html += `<div class="sheet-section"><div class="sheet-section-title">Special Requests</div>`;
+      if (notesSauces) html += `<div class="sheet-item"><span class="sheet-qty" style="color:var(--muted);font-size:11px;">SAUCE</span><span class="sheet-name" style="padding-left:8px;">${notesSauces}</span></div>`;
+      if (notesVeggies) html += `<div class="sheet-item"><span class="sheet-qty" style="color:var(--muted);font-size:11px;">VEG</span><span class="sheet-name" style="padding-left:8px;">${notesVeggies}</span></div>`;
+      if (notesDrinks) html += `<div class="sheet-item"><span class="sheet-qty" style="color:var(--muted);font-size:11px;">DRINK</span><span class="sheet-name" style="padding-left:8px;">${notesDrinks}</span></div>`;
+      if (notes) html += `<div class="sheet-item"><span class="sheet-qty" style="color:var(--muted);font-size:11px;">GEN</span><span class="sheet-name" style="padding-left:8px;">${notes}</span></div>`;
+      html += `</div>`;
+    }
+
+    // PREP / KITCHEN INSTRUCTIONS
+    if (prep) {
+      html += `<div class="sheet-section"><div class="sheet-section-title">Prep / Kitchen Instructions</div>`;
+      prep.split('\n').map(l => l.trim()).filter(Boolean).forEach(line => {
+        html += `<div class="sheet-item"><span class="sheet-name">${escHtml(line)}</span></div>`;
+      });
+      html += `</div>`;
+    }
+
+    // SUPPLIES
+    const tongLabel = u.tongs === 1 ? 'Serving Tong' : 'Serving Tongs';
+    const uItems = [
+      {label:'Plates', val:u.plates, showVal:true},
+      {label:'Forks', val:u.forks, showVal:true},
+      {label:'Spoons', val:u.spoons, showVal:true},
+      {label:'Cups', val:u.cups, showVal:true},
+      {label:tongLabel, val:u.tongs, showVal:true},
+      {label:'Napkins', val:u.napkins, showVal:!!u.napkinsOverridden},
+      {label:'Mayo', val:u.mayo, showVal:true},
+      {label:'Mustard', val:u.mustard, showVal:true}
+    ].filter(i => i.val > 0);
+
+    if (uItems.length) {
+      // Build supplies as a single centered line for print
+      const suppliesLine = uItems.map(i => i.showVal ? i.val + ' ' + i.label : i.label).join('  ·  ');
+      html += `<div class="supplies-box" id="supplies-box-el">
+        <div class="supplies-title">Supplies Needed</div>
+        <div class="supplies-grid">`;
+      uItems.forEach(i => {
+        html += `<div class="supply-item">
+          <span class="supply-qty">${i.showVal ? i.val : ''}</span>
+          <span>${i.label}</span>
+        </div>`;
+      });
+      html += `</div>
+        <div class="supplies-line-print" style="display:none;">${suppliesLine}</div>
+      </div>`;
+    }
+
+    html += `</div>`;
+    document.getElementById('order-sheet').innerHTML = html;
+    showTab('preview');
+    window.scrollTo(0, 0);
+    // Auto-build print sheet
+    currentTierIndex = -1;
+    document.getElementById('size-label').textContent = 'Font: Auto';
+    setTimeout(() => buildPrintSheet(), 50);
+  }
+
+  
+  // ── TOGGLE INLINE NOTE ──
+  function toggleInlineNote(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = el.style.display === 'flex' ? 'none' : 'flex';
+    if (el.style.display === 'flex') el.querySelector('input')?.focus();
+  }
+
+  // ── TOGGLE SECTION NOTE ──
+  function toggleSectionNote(id) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.style.display = el.style.display === 'block' ? 'none' : 'block';
+    if (el.style.display === 'block') el.focus();
+  }
+
+  // ── CUSTOM SIDES ──
+  let customSideCount = 0;
+  function addCustomSide() {
+    customSideCount++;
+    const id = 'custom-side-' + customSideCount;
+    const div = document.createElement('div');
+    div.id = id + '-wrap';
+    div.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:8px;';
+    div.innerHTML = `
+      <input class="custom-side-input" type="text" placeholder="e.g. Coleslaw, Potato Salad..." style="flex:1;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-size:16px;font-family:'Barlow',sans-serif;color:var(--text);">
+      <button onclick="document.getElementById('${id}-wrap').remove()" style="background:none;border:1px solid #fcc;color:var(--red);border-radius:6px;padding:8px 10px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif;">✕</button>
+    `;
+    document.getElementById('custom-sides-container').appendChild(div);
+    div.querySelector('input').focus();
+  }
+
+  // ── DRAFTS ──
+  function getDrafts() {
+    try { return JSON.parse(localStorage.getItem('gw-drafts') || '[]'); } catch { return []; }
+  }
+  function saveDrafts(drafts) {
+    localStorage.setItem('gw-drafts', JSON.stringify(drafts));
+  }
+
+  async function saveDraft(status) {
+    const client = document.getElementById('client').value || '';
+    const location = document.getElementById('location').value || '';
+    if (!client && !location) {
+      alert('Please enter at least a client name or location before saving.');
+      return;
+    }
+    const name = [client, location].filter(Boolean).join(' - ');
+    const state = captureState();
+    // Local backup (offline safety) — works even if the network/passcode is down.
+    const drafts = getDrafts();
+    drafts.unshift({ id: Date.now(), name, saved: new Date().toLocaleDateString(), state });
+    saveDrafts(drafts);
+    renderDrafts();
+    // Cloud save (primary) — builds the shared customer book + order history in Supabase.
+    if (!staffKey()) { showPasscodeGate(); return; }
+    try {
+      const r = await staffApi('/staff-orders', { method: 'POST', body: {
+        id: currentOrderId || undefined,
+        builderState: state,
+        status: status === 'confirmed' ? 'confirmed' : 'draft',
+        customer: { phone: state.contactInfo, name: client, contactInfo: state.contactInfo, location: state.location, deliveryAddress: state.deliveryAddress },
+        eventDate: state.date, readyTime: state.readyTime, pickupTime: state.pickupTime, headcount: state.headcount,
+      }});
+      currentOrderId = r.id;
+      alert(status === 'confirmed'
+        ? '✅ Order saved: ' + name + (state.date ? '\n\nIt stays in Saved Orders until the day after the event.' : '\n\n(Tip: add an event date so it auto-files after the event.)')
+        : '💾 Draft saved: ' + name);
+    } catch (e) {
+      if (e.message !== 'unauthorized') alert('Saved locally, but cloud save failed — check your connection.');
+    }
+  }
+
+  async function loadDraft(id) {
+    try {
+      const { order } = await staffApi('/staff-orders?action=get&id=' + encodeURIComponent(id));
+      if (!order) { alert('Order not found.'); return; }
+      if (!confirm('Load this order? The current form will be replaced.')) return;
+      restoreState(order.builder_state || {});
+      currentOrderId = order.id;   // editing this order → re-save updates it (no duplicate)
+      showTab('form');
+    } catch (e) { if (e.message !== 'unauthorized') alert('Could not load that order.'); }
+  }
+
+  async function deleteDraft(id) {
+    if (!confirm('Delete this saved order?')) return;
+    try {
+      await staffApi('/staff-orders', { method: 'POST', body: { action: 'delete', id } });
+      if (currentOrderId === id) currentOrderId = null;
+      renderDrafts();
+    } catch (e) { if (e.message !== 'unauthorized') alert('Could not delete.'); }
+  }
+
+  // A saved order's card. Confirmed orders get a green badge, drafts a grey one.
+  function orderCardHtml(o) {
+    const who = (o.customers && o.customers.name) || o.client_name || '(no name)';
+    const src = o.source === 'online' ? ' · online' : '';
+    const badge = o.status === 'confirmed'
+      ? '<span style="background:var(--green);color:#fff;font-size:10px;font-weight:800;padding:2px 7px;border-radius:20px;letter-spacing:0.5px;">CONFIRMED</span>'
+      : '<span style="background:var(--light);color:var(--muted);font-size:10px;font-weight:800;padding:2px 7px;border-radius:20px;letter-spacing:0.5px;">DRAFT</span>';
+    return `
+      <div class="draft-card">
+        <div class="draft-info">
+          <div class="draft-title">${escHtml(who)} ${badge}</div>
+          <div class="draft-meta">${escHtml(o.event_date || 'no date')}${src}</div>
+        </div>
+        <div class="draft-actions">
+          <button class="draft-load-btn" onclick="loadDraft('${o.id}')">Load</button>
+          <button class="draft-del-btn" onclick="deleteDraft('${o.id}')">✕</button>
+        </div>
+      </div>`;
+  }
+
+  function togglePast() {
+    const pl = document.getElementById('past-list'), tog = document.getElementById('past-toggle');
+    if (!pl || !tog) return;
+    const show = pl.style.display === 'none';
+    pl.style.display = show ? 'block' : 'none';
+    tog.textContent = (show ? '▾' : '▸') + ' Past orders (' + (tog.dataset.count || '') + ')';
+  }
+
+  async function renderDrafts() {
+    const list = document.getElementById('drafts-list');
+    if (!staffKey()) { list.innerHTML = '<p style="color:var(--muted);font-size:14px;text-align:center;padding:20px 0;">Enter the staff passcode to see saved orders.</p>'; showPasscodeGate(); return; }
+    list.innerHTML = '<p style="color:var(--muted);font-size:14px;text-align:center;padding:20px 0;">Loading…</p>';
+    try {
+      const { orders } = await staffApi('/staff-orders?action=list');
+      if (!orders || !orders.length) {
+        list.innerHTML = '<p style="color:var(--muted);font-size:14px;text-align:center;padding:20px 0;">No saved orders yet.<br>Build an order, then tap Save Draft or Save Order.</p>';
+        return;
+      }
+      // Split by event date: upcoming (today or later, or undated) shows by default;
+      // past orders auto-tuck away the day after the event but stay saved (archived, not deleted).
+      const todayStr = new Date().toLocaleDateString('en-CA'); // local YYYY-MM-DD
+      const upcoming = orders.filter(o => !o.event_date || o.event_date >= todayStr);
+      const past = orders.filter(o => o.event_date && o.event_date < todayStr);
+      let html = upcoming.length
+        ? upcoming.map(orderCardHtml).join('')
+        : '<p style="color:var(--muted);font-size:14px;text-align:center;padding:16px 0;">No upcoming orders.</p>';
+      if (past.length) {
+        html += `<button id="past-toggle" data-count="${past.length}" onclick="togglePast()" style="width:100%;margin-top:14px;padding:11px;background:none;border:1px dashed var(--border);border-radius:8px;color:var(--muted);font-size:13px;font-weight:700;cursor:pointer;font-family:'Barlow',sans-serif;touch-action:manipulation;">▸ Past orders (${past.length})</button>`;
+        html += `<div id="past-list" style="display:none;margin-top:10px;opacity:0.8;">${past.map(orderCardHtml).join('')}</div>`;
+      }
+      list.innerHTML = html;
+    } catch (e) { if (e.message !== 'unauthorized') list.innerHTML = '<p style="color:var(--red);font-size:14px;text-align:center;padding:20px 0;">Could not load orders.</p>'; }
+  }
+
+  // ── STATE CAPTURE / RESTORE (for drafts) ──
+  function captureState() {
+    const state = {
+      client: document.getElementById('client').value,
+      contactInfo: document.getElementById('contact-info')?.value || '',
+      location: document.getElementById('location').value,
+      date: document.getElementById('order-date').value,
+      headcount: document.getElementById('headcount').value,
+      readyTime: document.getElementById('ready-time').value,
+      pickupTime: document.getElementById('pickup-time').value,
+      fulfillment,
+      deliveryAddress: document.getElementById('delivery-address').value,
+      orderType,
+      notes: document.getElementById('order-notes').value,
+      cookies: document.getElementById('cookies-qty').value,
+      supplies: {
+        mayo: document.getElementById('sup-mayo')?.value || '',
+        mustard: document.getElementById('sup-mustard')?.value || '',
+        napkins: document.getElementById('sup-napkins')?.value || '',
+        tongs: document.getElementById('sup-tongs')?.value || '',
+        plates: document.getElementById('sup-plates')?.value || '',
+        forks: document.getElementById('sup-forks')?.value || '',
+        spoons: document.getElementById('sup-spoons')?.value || '',
+        cups: document.getElementById('sup-cups')?.value || '',
+      },
+      prep: document.getElementById('prep-notes')?.value || '',
+      // counters
+      counters: {},
+      // chip inputs
+      chips: {},
+      // custom sides
+      customSides: Array.from(document.querySelectorAll('.custom-side-input')).map(el => el.value),
+      // section notes
+      sectionNotes: {
+        sauces: document.getElementById('note-sauces')?.value || '',
+        veggies: document.getElementById('note-veggies')?.value || '',
+        chips: document.getElementById('note-chips')?.value || '',
+        drinks: document.getElementById('note-drinks')?.value || '',
+      }
+    };
+
+    const counterIds = ['side-salad','side-salad-chicken','s-hothooney','s-buffalo','s-caesar','s-subsauce','s-horseradish','s-spicyranch','s-sweet','s-chipotle','s-sweettang','s-ranch','s-balsamic','v-hotpeppers','v-sweetpeppers','v-banana','v-olives','v-spinach','v-cucumber','v-pickles','d-water','d-pepsi','d-dietpepsi','d-starry','d-odyssey','d-gatorade','d-lemonade','d-sweettea','d-unsweettea','d-gallon-sweet','d-gallon-unsweet','d-gallon-coldbrew','cheesecake-slice','cheesecake-whole'];
+    counterIds.forEach(id => { state.counters[id] = getVal(id); });
+
+    const chipIds = ['c-coolranch','c-sweetchilidoritos','c-bbq','c-saltvinegar','c-seasalt','c-jalapeno','c-voodoo','c-cheddar','c-variety'];
+    chipIds.forEach(id => { state.chips[id] = getChip(id); });
+
+    // salad rows (per-salad dressing + note) — so drafts keep salad detail
+    state.saladRows = readSaladRows('side-salad');
+    state.saladChickenRows = readSaladRows('side-salad-chicken');
+    state.noteCookies = document.getElementById('note-cookies')?.querySelector('input')?.value || '';
+
+    // the actual order — racks, platters, box lunches (with sandwich rows + card notes)
+    const grabItem = (id) => ({
+      size: document.getElementById(id + '-size')?.value || '',
+      qty: document.getElementById(id + '-qty')?.value || '1',
+      cut: document.getElementById(id + '-cut')?.value || 'Full',
+      sandwiches: readSandwichRows(id),
+      cardNote: document.getElementById(id + '-card-note')?.value || ''
+    });
+    state.racks = racks.filter(id => document.getElementById(id)).map(grabItem);
+    state.platters = platters.filter(id => document.getElementById(id)).map(grabItem);
+    state.boxLunches = boxLunches.filter(id => document.getElementById(id)).map(id => ({
+      sandwiches: readSandwichRows(id),
+      cardNote: document.getElementById(id + '-card-note')?.value || ''
+    }));
+    state.fullSubs = fullSubs.filter(id => document.getElementById(id)).map(readFullSub);
+    state.fullSubCustom = Array.from(document.querySelectorAll('#fullsub-custom-container > div'))
+      .map(d => ({ qty: d.querySelector('.fsub-custom-qty')?.value || '1', text: d.querySelector('.fsub-custom-input')?.value || '' }))
+      .filter(x => x.text.trim());
+
+    return state;
+  }
+
+  // Rebuild an item's sandwich rows from saved draft data
+  function restoreSandwiches(parentId, sandwiches) {
+    const container = document.getElementById(parentId + '-sandwiches');
+    if (!container) return;
+    container.innerHTML = '';
+    (sandwiches || []).forEach(s => {
+      addSandwichRow(parentId);
+      const rows = container.querySelectorAll('.sandwich-row');
+      const row = rows[rows.length - 1];
+      const qtyEl = row.querySelector('input[type="number"]');
+      const typeEl = row.querySelector('select');
+      if (qtyEl) qtyEl.value = s.qty || 1;
+      if (typeEl) typeEl.value = LEGACY_TYPES[s.type] || s.type || '';
+      if (s.chip) { const chipEl = document.getElementById(row.id + '-chip'); if (chipEl) chipEl.value = s.chip; }
+      if (s.name) { const nameEl = document.getElementById(row.id + '-name'); if (nameEl) nameEl.value = s.name; }
+      if (s.note) {
+        const noteWrap = document.getElementById(row.id + '-note');
+        if (noteWrap) { noteWrap.style.display = 'flex'; const ni = noteWrap.querySelector('input'); if (ni) ni.value = s.note; }
+      }
+    });
+  }
+
+  // Reveal + fill a card-level note (racks / platters / boxes)
+  function restoreCardNote(id, val) {
+    if (!val) return;
+    const cn = document.getElementById(id + '-card-note');
+    if (cn) { cn.value = val; cn.style.display = 'block'; }
+  }
+
+  function restoreState(state) {
+    if (!state) return;
+    document.getElementById('client').value = state.client || '';
+    document.getElementById('location').value = state.location || '';
+    document.getElementById('order-date').value = state.date || '';
+    document.getElementById('headcount').value = state.headcount || '';
+    document.getElementById('ready-time').value = state.readyTime || '';
+    document.getElementById('pickup-time').value = state.pickupTime || '';
+    document.getElementById('order-notes').value = state.notes || '';
+    if (document.getElementById('contact-info')) document.getElementById('contact-info').value = state.contactInfo || '';
+    document.getElementById('cookies-qty').value = state.cookies || '';
+    // Supplies & condiments overrides (blank = auto)
+    const sup = state.supplies || {};
+    ['mayo','mustard','napkins','tongs','plates','forks','spoons','cups'].forEach(k => {
+      const el = document.getElementById('sup-' + k); if (el) el.value = sup[k] || '';
+    });
+    // Backward-compat: older drafts stored an additive "extra plates" value.
+    if (!state.supplies && state.extraPlates && document.getElementById('sup-plates')) {
+      document.getElementById('sup-plates').value = state.extraPlates;
+    }
+    if (document.getElementById('prep-notes')) document.getElementById('prep-notes').value = state.prep || '';
+    setFulfillment(state.fulfillment || 'pickup');
+    document.getElementById('delivery-address').value = state.deliveryAddress || '';
+    setOrderType(state.orderType || 'racks');
+
+    // Restore counters (sauces/veggies/drinks/cheesecake are number inputs; salads handled below)
+    Object.entries(state.counters || {}).forEach(([id, val]) => {
+      if (id === 'side-salad' || id === 'side-salad-chicken') return;
+      const el = document.getElementById(id);
+      if (!el) return;
+      if (el.tagName === 'INPUT') el.value = val || '';
+      else el.textContent = val;
+    });
+
+    // Restore chips
+    Object.entries(state.chips || {}).forEach(([id, val]) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val || '';
+    });
+
+    // Restore salads — rebuild each dressing row, then set its dressing + note
+    document.getElementById('salad-rows-container').innerHTML = '';
+    document.getElementById('salad-chicken-rows-container').innerHTML = '';
+    document.getElementById('side-salad').textContent = '0';
+    document.getElementById('side-salad-chicken').textContent = '0';
+    [['side-salad', state.saladRows], ['side-salad-chicken', state.saladChickenRows]].forEach(([saladId, rowsData]) => {
+      const count = (state.counters && state.counters[saladId]) || 0;
+      for (let i = 0; i < count; i++) adjSalad(saladId, 1);
+      const containerId = saladId === 'side-salad-chicken' ? 'salad-chicken-rows-container' : 'salad-rows-container';
+      document.querySelectorAll('#' + containerId + ' .salad-row').forEach((row, i) => {
+        const data = (rowsData || [])[i];
+        if (!data) return;
+        const sel = row.querySelector('select');
+        if (sel && data.dressing) sel.value = data.dressing;
+        if (data.note) {
+          const noteInput = row.querySelector('input[type="text"]');
+          const noteWrap = row.querySelector('.inline-note');
+          if (noteInput) noteInput.value = data.note;
+          if (noteWrap) noteWrap.style.display = 'flex';
+        }
+      });
+    });
+
+    // Restore cookies note
+    if (state.noteCookies) { const el = document.getElementById('note-cookies')?.querySelector('input'); if (el) { el.value = state.noteCookies; document.getElementById('note-cookies').style.display = 'flex'; } }
+
+    // Restore the actual order — racks, platters, box lunches (with sandwiches + notes)
+    racks = []; rackCount = 0;
+    document.getElementById('racks-container').innerHTML = '';
+    (state.racks || []).forEach(r => {
+      addRack();
+      const id = 'rack-' + rackCount;
+      if (document.getElementById(id + '-size')) document.getElementById(id + '-size').value = r.size || '30';
+      if (document.getElementById(id + '-qty')) document.getElementById(id + '-qty').value = r.qty || '1';
+      if (document.getElementById(id + '-cut')) document.getElementById(id + '-cut').value = r.cut || 'Thirds';
+      restoreSandwiches(id, r.sandwiches);
+      restoreCardNote(id, r.cardNote);
+    });
+
+    platters = []; platterCount = 0;
+    document.getElementById('platters-container').innerHTML = '';
+    (state.platters || []).forEach(p => {
+      addPlatter();
+      const id = 'platter-' + platterCount;
+      if (document.getElementById(id + '-size')) document.getElementById(id + '-size').value = p.size || 'Small';
+      if (document.getElementById(id + '-qty')) document.getElementById(id + '-qty').value = p.qty || '1';
+      if (document.getElementById(id + '-cut')) document.getElementById(id + '-cut').value = p.cut || 'Quarters';
+      restoreSandwiches(id, p.sandwiches);
+      restoreCardNote(id, p.cardNote);
+    });
+
+    boxLunches = []; boxCount = 0;
+    document.getElementById('boxlunch-container').innerHTML = '';
+    (state.boxLunches || []).forEach(b => {
+      addBoxLunch();
+      const id = 'box-' + boxCount;
+      restoreSandwiches(id, b.sandwiches);
+      restoreCardNote(id, b.cardNote);
+    });
+
+    fullSubs = []; fullSubCount = 0;
+    document.getElementById('fullsubs-container').innerHTML = '';
+    (state.fullSubs || []).forEach(fs => {
+      addFullSub();
+      const id = 'fsub-' + fullSubCount;
+      if (document.getElementById(id + '-type')) document.getElementById(id + '-type').value = LEGACY_TYPES[fs.type] || fs.type || '';
+      onFullSubType(id);
+      if (document.getElementById(id + '-qty')) document.getElementById(id + '-qty').value = fs.qty || '1';
+      if (document.getElementById(id + '-bread')) document.getElementById(id + '-bread').value = fs.bread || 'White Hoagie';
+      if (document.getElementById(id + '-rack')) document.getElementById(id + '-rack').checked = !!fs.rackStyle;
+      (fs.removed || []).forEach(name => document.querySelectorAll('#' + id + '-ings .ing-chip').forEach(c => { if (c.textContent === name) c.classList.add('removed'); }));
+      let anyAdded = false;
+      (fs.added || []).forEach(name => document.querySelectorAll('#' + id + '-extras .ing-chip').forEach(c => { if (c.textContent === name) { c.classList.add('added'); anyAdded = true; } }));
+      if (anyAdded) { const ex = document.getElementById(id + '-extras'); if (ex) ex.style.display = 'flex'; }
+      restoreCardNote(id, fs.note);
+    });
+
+    const fsCustom = document.getElementById('fullsub-custom-container');
+    if (fsCustom) {
+      fsCustom.innerHTML = '';
+      (state.fullSubCustom || []).forEach(c => {
+        addCustomFullSub();
+        const rows = fsCustom.querySelectorAll(':scope > div');
+        const row = rows[rows.length - 1];
+        if (row) {
+          const q = row.querySelector('.fsub-custom-qty'); if (q) q.value = c.qty || '1';
+          const t = row.querySelector('.fsub-custom-input'); if (t) t.value = c.text || '';
+        }
+      });
+    }
+
+    // Restore custom sides
+    document.getElementById('custom-sides-container').innerHTML = '';
+    customSideCount = 0;
+    (state.customSides || []).forEach(val => {
+      addCustomSide();
+      const inputs = document.querySelectorAll('.custom-side-input');
+      inputs[inputs.length - 1].value = val;
+    });
+
+    // Restore section notes
+    const n = state.sectionNotes || {};
+    if (n.sauces && document.getElementById('note-sauces')) { document.getElementById('note-sauces').value = n.sauces; document.getElementById('note-sauces').style.display = 'block'; }
+    if (n.veggies && document.getElementById('note-veggies')) { document.getElementById('note-veggies').value = n.veggies; document.getElementById('note-veggies').style.display = 'block'; }
+    if (n.chips && document.getElementById('note-chips')) { document.getElementById('note-chips').value = n.chips; document.getElementById('note-chips').style.display = 'block'; }
+    if (n.drinks && document.getElementById('note-drinks')) { document.getElementById('note-drinks').value = n.drinks; document.getElementById('note-drinks').style.display = 'block'; }
+
+    refreshSupplyPlaceholders();
+  }
+
+  // Update showTab to include drafts
+    // ── PRINT SIZE TIERS ──
+  const sizeTiers = [10, 12, 14, 16, 18, 20, 24, 28];
+  let currentTierIndex = -1; // -1 = auto
+
+  function countPrintLines() {
+    const sheet = document.getElementById('order-sheet');
+    if (!sheet) return 0;
+    const items = sheet.querySelectorAll('.sheet-item, .sheet-sub, .sheet-section-title, .supply-item');
+    return items.length;
+  }
+
+  function autoTierIndex() {
+    const lines = countPrintLines();
+    if (lines <= 6)  return 7; // 28pt
+    if (lines <= 10) return 6; // 24pt
+    if (lines <= 13) return 5; // 20pt
+    if (lines <= 17) return 4; // 18pt
+    if (lines <= 22) return 3; // 16pt
+    if (lines <= 28) return 2; // 14pt
+    if (lines <= 38) return 1; // 12pt
+    return 0;                  // 10pt
+  }
+
+  function adjustPrintSize(delta) {
+    if (currentTierIndex === -1) currentTierIndex = autoTierIndex();
+    currentTierIndex = Math.max(0, Math.min(sizeTiers.length - 1, currentTierIndex + delta));
+    document.getElementById('size-label').textContent = 'Font: ' + sizeTiers[currentTierIndex] + 'pt';
+    buildPrintSheet(sizeTiers[currentTierIndex]);
+  }
+
+  // Print must always produce the sheet: generate it if it was never generated, and
+  // rebuild the hidden print copy right before printing (fixes blank print-outs when
+  // Print is tapped without hitting Generate, or after loading a saved order).
+  function printSheet() {
+    try {
+      if (!document.querySelector('#order-sheet .sheet-header')) generateOrder();
+      buildPrintSheet(currentTierIndex >= 0 ? sizeTiers[currentTierIndex] : undefined);
+    } catch (e) { /* still open the print dialog with whatever we have */ }
+    window.print();
+  }
+
+  function buildPrintSheet(fontSize) {
+    const sheet = document.getElementById('order-sheet');
+    if (!sheet) return;
+
+    // Count lines to pick size if not manually set
+    if (!fontSize) {
+      const idx = autoTierIndex();
+      fontSize = sizeTiers[idx];
+      currentTierIndex = idx;
+      document.getElementById('size-label').textContent = 'Font: ' + fontSize + 'pt';
+    }
+
+    const fs = fontSize + 'px';
+    const titleFs = (fontSize + 6) + 'px';
+    const metaFs = (fontSize - 1) + 'px';
+    const sectionFs = (fontSize - 1) + 'px';
+    const subFs = (fontSize - 1) + 'px';
+
+    // Gather all data from order-sheet
+    const headerEl = sheet.querySelector('.sheet-header');
+
+    const title = headerEl?.querySelector('h2')?.textContent || '';
+    const metas = Array.from(headerEl?.querySelectorAll('.sheet-meta') || []).map(el => el.textContent);
+    const badges = Array.from(headerEl?.querySelectorAll('.badge-pill') || []).map(el => el.textContent);
+
+    // Build sections
+    const sections = Array.from(sheet.querySelectorAll('.sheet-section'));
+    let sectionsHtml = '';
+    sections.forEach(sec => {
+      const sTitle = sec.querySelector('.sheet-section-title')?.textContent || '';
+      const items = Array.from(sec.querySelectorAll('.sheet-item, .sheet-sub'));
+      if (!items.length) return;
+
+      sectionsHtml += `<div style="margin-bottom:${fontSize * 0.8}px;break-inside:avoid;page-break-inside:avoid;">`;
+      sectionsHtml += `<div style="font-size:${sectionFs};font-weight:700;text-transform:uppercase;letter-spacing:1px;border-bottom:1.5px solid #000;padding-bottom:2px;margin-bottom:${fontSize * 0.4}px;text-align:center;">${sTitle}</div>`;
+
+      const checkboxHtml = `<div style="width:16px;height:16px;border:1.5px solid #000;border-radius:2px;flex-shrink:0;"></div>`;
+
+      items.forEach(item => {
+        const isSub = item.classList.contains('sheet-sub');
+        const isSubCheck = item.classList.contains('sheet-sub-check');
+        // Join the qty/tag span and the text span with a space so tags like
+        // "SAUCE"/"GEN" don't glue onto the note text in print.
+        const parts = Array.from(item.children).map(c => c.textContent.trim()).filter(Boolean);
+        const rawText = parts.length > 1 ? parts.join(' ') : item.textContent.trim();
+        // Add space after quantity like "1x" -> "1x "
+        const text = rawText.replace(/^(\d+x)([^ ])/, '$1 $2');
+        // Allergy lines must shout on a kitchen sheet.
+        const isAllergy = /allerg/i.test(text);
+        const allergyStyle = isAllergy ? 'background:#000;color:#fff;padding:1px 8px;font-weight:900;' : '';
+
+        if (isSubCheck) {
+          // Grilled chicken — gets checkboxes, indented
+          sectionsHtml += `
+            <div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:${fontSize * 0.15}px 0 ${fontSize * 0.15}px ${fontSize}px;font-size:${subFs};color:#333;">
+              ${checkboxHtml}
+              <span style="margin-left:4px;">${text}</span>
+            </div>`;
+        } else if (isSub) {
+          // Notes — no checkboxes, plain centered italic
+          sectionsHtml += `<div style="font-size:${subFs};text-align:center;color:#555;padding:1px 0;font-style:italic;"><span style="${allergyStyle}">${text}</span></div>`;
+        } else {
+          // Main item — full checkboxes
+          sectionsHtml += `
+            <div style="display:flex;align-items:center;justify-content:center;gap:12px;padding:${fontSize * 0.2}px 0;font-size:${fs};">
+              ${checkboxHtml}
+              <span style="font-weight:500;${allergyStyle}">${text}</span>
+            </div>`;
+        }
+      });
+      sectionsHtml += `</div>`;
+    });
+
+    // Build supplies line
+    const suppliesBox = sheet.querySelector('.supplies-box');
+    let suppliesHtml = '';
+    if (suppliesBox) {
+      const supplyItems = Array.from(suppliesBox.querySelectorAll('.supply-item')).map(el => el.textContent.trim().replace(/\s+/g, ' '));
+      if (supplyItems.length) {
+        suppliesHtml = `<div style="margin-top:${fontSize}px;padding-top:${fontSize * 0.5}px;border-top:2px solid #000;text-align:center;">
+          <div style="font-size:${sectionFs};font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:${fontSize * 0.3}px;">Supplies Needed</div>
+          <div style="font-size:${fs};font-weight:600;display:flex;flex-wrap:wrap;justify-content:center;gap:6px 0;">${supplyItems.map(s => `<span style='white-space:nowrap;display:inline-flex;align-items:center;gap:4px;'><span style='width:14px;height:14px;border:1.5px solid #000;border-radius:2px;display:inline-block;flex-shrink:0;'></span>${s}</span>`).join('<span style="margin:0 4px;">·</span>')}</div>
+        </div>`;
+      }
+    }
+
+    // Assemble full print sheet
+    const printSheet = document.getElementById('print-sheet');
+    printSheet.innerHTML = `
+      <div style="text-align:center;margin-bottom:${fontSize}px;padding-bottom:${fontSize * 0.5}px;border-bottom:2px solid #000;">
+        <div style="font-size:${titleFs};font-weight:900;text-transform:uppercase;letter-spacing:2px;">${title}</div>
+        ${metas.map((m, i) => `<div style="font-size:${i === metas.length-1 ? (parseInt(metaFs)-2)+'px' : metaFs};margin-top:${i===0?4:2}px;color:#333;white-space:pre-wrap;word-break:break-word;">${m}</div>`).join('')}
+        ${badges.length ? `<div style="font-size:${metaFs};margin-top:6px;font-weight:900;letter-spacing:1px;text-transform:uppercase;">${badges.join(' · ')}</div>` : ''}
+      </div>
+      ${sectionsHtml}
+      ${suppliesHtml}
+    `;
+  }
+
+  // ── COPY FOR SLACK ──
+  function copyOrderText() {
+    const sheet = document.getElementById('order-sheet');
+    const text = sheet.innerText;
+    navigator.clipboard.writeText(text).then(() => {
+      const btn = document.getElementById('copy-btn');
+      btn.textContent = '✅ Copied!';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = '📋 Copy for Slack'; btn.classList.remove('copied'); }, 2500);
+    });
+  }
+
+  function formatTime(val) {
+    if (!val) return '';
+    const [h, m] = val.split(':');
+    const hour = parseInt(h);
+    const ampm = hour >= 12 ? 'pm' : 'am';
+    return `${hour % 12 || 12}:${m} ${ampm}`;
+  }
+
+  document.getElementById('order-date').valueAsDate = new Date();
+  // Keep the Supplies & Condiments placeholders showing the current auto values as the order is built.
+  const buildForm = document.getElementById('tab-form');
+  if (buildForm) buildForm.addEventListener('input', refreshSupplyPlaceholders);
+  refreshSupplyPlaceholders();
+  renderDrafts();
+  if (!staffKey()) showPasscodeGate();
+</script>
+
+
+</body></html>
