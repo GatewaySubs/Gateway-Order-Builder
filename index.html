@@ -732,7 +732,15 @@
           </div>
           <div class="field">
             <label>Location</label>
-            <input type="text" id="location" placeholder="e.g. Pasadena Ave">
+            <select id="location">
+              <option value="">Choose a store…</option>
+              <option value="Kenwood">Kenwood</option>
+              <option value="4th St">4th St</option>
+              <option value="DT Tampa">Downtown Tampa</option>
+              <option value="Pasadena">South Pasadena</option>
+              <option value="Ellenton">Ellenton</option>
+              <option value="Channelside">Channelside</option>
+            </select>
           </div>
         </div>
         <div id="reorder-row" style="display:none;margin-bottom:12px;">
@@ -770,8 +778,12 @@
           <input type="text" id="delivery-address" placeholder="Full delivery address">
         </div>
         <div class="field" style="margin-top:10px;">
-          <label>Phone / Email</label>
-          <input type="text" id="contact-info" placeholder="e.g. 727-555-0100 or client@email.com">
+          <label>Phone</label>
+          <input type="text" id="contact-info" placeholder="e.g. 727-555-0100" inputmode="tel">
+        </div>
+        <div class="field" style="margin-top:10px;">
+          <label>Email</label>
+          <input type="email" id="contact-email" placeholder="e.g. client@email.com" autocomplete="off">
         </div>
       </div>
     </div>
@@ -1109,10 +1121,35 @@
       } catch (e) { box.style.display = 'none'; }
     }, 280);
   }
+  // Store picker. Older orders/customers have free-typed names ("DT tampa", "Kenwood ", "Downtown Tampa"…):
+  // match those to the right store. Anything unrecognised is kept as an extra choice so nothing is lost.
+  function normalizeLocation(raw) {
+    const s = String(raw || '').trim().toLowerCase();
+    if (!s) return '';
+    if (s.includes('kenwood')) return 'Kenwood';
+    if (s.includes('4th')) return '4th St';
+    if (s.includes('tampa') || s === 'dt') return 'DT Tampa';
+    if (s.includes('pasadena')) return 'Pasadena';
+    if (s.includes('ellenton')) return 'Ellenton';
+    if (s.includes('channel')) return 'Channelside';
+    return String(raw).trim();
+  }
+  function setLocation(raw) {
+    const sel = document.getElementById('location');
+    const val = normalizeLocation(raw);
+    if (val && ![...sel.options].some(o => o.value === val)) {
+      const opt = document.createElement('option');
+      opt.value = val; opt.textContent = val + ' (not a store — pick one)';
+      sel.appendChild(opt);
+    }
+    sel.value = val;
+  }
+
   function pickCustomer(c) {
     document.getElementById('client').value = c.name || '';
     const ci = c.contact_info || c.phone || c.email || ''; if (ci) document.getElementById('contact-info').value = ci;
-    if (c.default_location) document.getElementById('location').value = c.default_location;
+    if (c.email) document.getElementById('contact-email').value = c.email;
+    if (c.default_location) setLocation(c.default_location);
     if (c.default_delivery_address) { const da = document.getElementById('delivery-address'); if (da) da.value = c.default_delivery_address; }
     document.getElementById('client-suggest').style.display = 'none';
     selectedCustomerId = c.id;
@@ -2026,7 +2063,7 @@
         id: currentOrderId || undefined,
         builderState: state,
         status: status === 'confirmed' ? 'confirmed' : 'draft',
-        customer: { phone: state.contactInfo, name: client, contactInfo: state.contactInfo, location: state.location, deliveryAddress: state.deliveryAddress },
+        customer: { phone: state.contactInfo, email: state.contactEmail, name: client, contactInfo: state.contactInfo, location: state.location, deliveryAddress: state.deliveryAddress },
         eventDate: state.date, readyTime: state.readyTime, pickupTime: state.pickupTime, headcount: state.headcount,
       }});
       currentOrderId = r.id;
@@ -2117,6 +2154,7 @@
     const state = {
       client: document.getElementById('client').value,
       contactInfo: document.getElementById('contact-info')?.value || '',
+      contactEmail: (document.getElementById('contact-email')?.value || '').trim(),
       location: document.getElementById('location').value,
       date: document.getElementById('order-date').value,
       headcount: document.getElementById('headcount').value,
@@ -2218,13 +2256,14 @@
   function restoreState(state) {
     if (!state) return;
     document.getElementById('client').value = state.client || '';
-    document.getElementById('location').value = state.location || '';
+    setLocation(state.location || '');
     document.getElementById('order-date').value = state.date || '';
     document.getElementById('headcount').value = state.headcount || '';
     document.getElementById('ready-time').value = state.readyTime || '';
     document.getElementById('pickup-time').value = state.pickupTime || '';
     document.getElementById('order-notes').value = state.notes || '';
     if (document.getElementById('contact-info')) document.getElementById('contact-info').value = state.contactInfo || '';
+    if (document.getElementById('contact-email')) document.getElementById('contact-email').value = state.contactEmail || '';
     document.getElementById('cookies-qty').value = state.cookies || '';
     // Supplies & condiments overrides (blank = auto)
     const sup = state.supplies || {};
