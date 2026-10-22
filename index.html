@@ -1040,6 +1040,7 @@
       <button class="action-btn btn-print" onclick="printSheet()">🖨️ Print / Save PDF</button>
       <button class="action-btn btn-save-order" onclick="saveDraft('confirmed')">✅ Save Order</button>
     </div>
+    <button class="action-btn" id="btn-send-cal" onclick="sendToCalendar()" style="width:100%;margin:-4px 0 12px;background:#1a2744;color:#fff;">📅 Save &amp; Send to Calendar</button>
     <div class="print-size-controls">
       <button class="size-btn" onclick="adjustPrintSize(-1)">A−</button>
       <span id="size-label">Font: Auto</span>
@@ -2052,6 +2053,69 @@
     localStorage.setItem('gw-drafts', JSON.stringify(drafts));
   }
 
+  // What gets saved to the cloud for an order (used by Save Order / Save Draft and Send to Calendar).
+  function orderPayload(state, status) {
+    return {
+      id: currentOrderId || undefined,
+      builderState: state,
+      status: status === 'confirmed' ? 'confirmed' : 'draft',
+      customer: { phone: state.contactInfo, email: state.contactEmail, name: state.client, contactInfo: state.contactInfo, location: state.location, deliveryAddress: state.deliveryAddress },
+      eventDate: state.date, readyTime: state.readyTime, pickupTime: state.pickupTime, headcount: state.headcount,
+    };
+  }
+
+  // ── SEND TO CALENDAR: save the order, make the PDF, and put it on the store's calendar (or update it) ──
+  async function sheetPdfBase64() {
+    if (!window.html2pdf) await new Promise((ok, fail) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      s.onload = ok; s.onerror = () => fail(new Error('the PDF maker did not load'));
+      document.head.appendChild(s);
+    });
+    buildPrintSheet(currentTierIndex >= 0 ? sizeTiers[currentTierIndex] : undefined);
+    // Same sheet as Print, laid out at letter width (8.5in minus the 0.35in margins).
+    const box = document.createElement('div');
+    box.style.cssText = 'position:absolute;left:0;top:0;width:7.8in;background:#fff;color:#000;font-family:Arial,Helvetica,sans-serif;z-index:-1;';
+    box.innerHTML = document.getElementById('print-sheet').innerHTML;
+    document.body.appendChild(box);
+    try {
+      const uri = await html2pdf().set({
+        margin: 0.35, jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' },
+        html2canvas: { scale: 2, backgroundColor: '#ffffff' }, pagebreak: { mode: ['css', 'avoid-all'] },
+      }).from(box).outputPdf('datauristring');
+      return uri.split(',')[1];
+    } finally { box.remove(); }
+  }
+
+  async function sendToCalendar() {
+    if (!staffKey()) { showPasscodeGate(); return; }
+    const state = captureState();
+    if (!state.location || !state.date || !(state.readyTime || state.pickupTime)) {
+      alert('Pick the store, the date and the ready time first — the calendar needs all three.');
+      return;
+    }
+    const btn = document.getElementById('btn-send-cal');
+    btn.disabled = true; btn.textContent = '⏳ Sending to the calendar…';
+    try {
+      if (!document.querySelector('#order-sheet .sheet-header')) generateOrder();
+      const saved = await staffApi('/staff-orders', { method: 'POST', body: orderPayload(state, 'confirmed') });
+      currentOrderId = saved.id;
+      const pdfBase64 = await sheetPdfBase64();
+      const res = await fetch(STAFF_API + '/calendar-sync', {
+        method: 'POST', headers: { 'X-Staff-Key': staffKey(), 'Content-Type': 'application/json' },
+        body: JSON.stringify({ orderId: saved.id, title: calendarTitle(state), pdfBase64 }),
+      });
+      const out = await res.json().catch(() => ({}));
+      if (res.status === 401) { showPasscodeGate('That passcode did not work — try again.'); return; }
+      if (!res.ok || !out.ok) throw new Error(out.error || 'the calendar did not answer');
+      alert(`✅ ${out.updated ? 'Updated on' : 'Added to'} the ${out.store} calendar:\n${out.title}\n\nThe PDF is in the Catering Orders folder.`);
+    } catch (e) {
+      if (e.message !== 'unauthorized') alert('The order is saved, but it didn\'t reach the calendar:\n' + e.message + '\n\nTry again, or add it to the calendar by hand this time.');
+    } finally {
+      btn.disabled = false; btn.textContent = '📅 Save & Send to Calendar';
+    }
+  }
+
   async function saveDraft(status) {
     const client = document.getElementById('client').value || '';
     const location = document.getElementById('location').value || '';
@@ -2069,13 +2133,7 @@
     // Cloud save (primary) — builds the shared customer book + order history in Supabase.
     if (!staffKey()) { showPasscodeGate(); return; }
     try {
-      const r = await staffApi('/staff-orders', { method: 'POST', body: {
-        id: currentOrderId || undefined,
-        builderState: state,
-        status: status === 'confirmed' ? 'confirmed' : 'draft',
-        customer: { phone: state.contactInfo, email: state.contactEmail, name: client, contactInfo: state.contactInfo, location: state.location, deliveryAddress: state.deliveryAddress },
-        eventDate: state.date, readyTime: state.readyTime, pickupTime: state.pickupTime, headcount: state.headcount,
-      }});
+      const r = await staffApi('/staff-orders', { method: 'POST', body: orderPayload(state, status) });
       currentOrderId = r.id;
       alert(status === 'confirmed'
         ? '✅ Order saved: ' + name + (state.date ? '\n\nIt stays in Saved Orders until the day after the event.' : '\n\n(Tip: add an event date so it auto-files after the event.)')
