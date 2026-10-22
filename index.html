@@ -1046,6 +1046,13 @@
       <button class="size-btn" onclick="adjustPrintSize(1)">A+</button>
     </div>
     <p class="hint" style="margin-bottom:12px;text-align:center;">On iPhone: Print → tap the preview → Share → Save to Files or send to Slack</p>
+    <div id="cal-title-box" style="display:none;align-items:center;gap:10px;background:#fff;border:1.5px dashed var(--border);border-radius:10px;padding:10px 12px;margin-bottom:12px;">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;">📅 Calendar title</div>
+        <div id="cal-title-text" style="font-size:15px;font-weight:600;word-break:break-word;"></div>
+      </div>
+      <button class="size-btn" id="cal-title-copy" onclick="copyCalendarTitle()" style="width:auto;padding:0 14px;">Copy</button>
+    </div>
 
     <div class="order-sheet" id="order-sheet">
       <div style="text-align:center;padding:40px 20px;color:var(--muted);">
@@ -1993,6 +2000,9 @@
 
     html += `</div>`;
     document.getElementById('order-sheet').innerHTML = html;
+    const calTitle = calendarTitle(captureState());
+    document.getElementById('cal-title-text').textContent = calTitle;
+    document.getElementById('cal-title-box').style.display = calTitle ? 'flex' : 'none';
     showTab('preview');
     window.scrollTo(0, 0);
     // Auto-build print sheet
@@ -2147,6 +2157,44 @@
       }
       list.innerHTML = html;
     } catch (e) { if (e.message !== 'unauthorized') list.innerHTML = '<p style="color:var(--red);font-size:14px;text-align:center;padding:20px 0;">Could not load orders.</p>'; }
+  }
+
+  // ── CALENDAR TITLE (suggested, so every store calendar reads the same way; the calendar shows the time) ──
+  //   "Pickup: Carlos Navedo 40 half subs" · "Delivery: Tina 51-rack + 1x Lg platter"
+  function calendarTitle(s) {
+    const n = (v) => parseInt(v, 10) || 0;
+    const items = [];
+    (s.racks || []).forEach(r => {
+      const size = n(r.size), qty = n(r.qty) || 1;
+      if (!size) return;
+      const what = r.cut === 'Halves' ? `${size} half subs` : r.cut === 'Full' ? `${size} subs` : `${size}-rack`;
+      items.push((qty > 1 ? qty + 'x ' : '') + what);
+    });
+    const platters = (s.platters || []).map(p => `${n(p.qty) || 1}x ${p.size === 'Large' ? 'Lg' : 'Sm'}`);
+    if (platters.length) items.push(platters.join(' + ') + ' platter');
+    const boxes = (s.boxLunches || []).reduce((a, b) => a + (b.sandwiches || []).reduce((x, w) => x + n(w.qty), 0), 0);
+    if (boxes) items.push(`${boxes} box lunches`);
+    // Individual orders, named by what they are: subs, wraps (incl. lettuce wraps) or salads
+    const byKind = { sub: 0, wrap: 0, salad: 0 };
+    (s.fullSubs || []).forEach(f => {
+      if (!f.type) return;
+      const kind = f.bread === 'Salad' ? 'salad' : /wrap/i.test(f.bread || '') || /wrap/i.test(f.type) ? 'wrap' : 'sub';
+      byKind[kind] += n(f.qty);
+    });
+    byKind.sub += (s.fullSubCustom || []).filter(c => String(c?.text ?? c ?? '').trim()).length;
+    for (const k of ['sub', 'wrap', 'salad']) if (byKind[k]) items.push(`${byKind[k]} ${k}${byKind[k] === 1 ? '' : 's'}`);
+    const salads = n(s.counters?.['side-salad']) + n(s.counters?.['side-salad-chicken']);
+    if (!items.length && salads) items.push(`${salads} salads`);
+    const who = (s.client || '').trim();
+    if (!who && !items.length) return '';
+    return `${s.fulfillment === 'delivery' ? 'Delivery' : 'Pickup'}: ${[who, items.join(' + ')].filter(Boolean).join(' ')}`;
+  }
+  function copyCalendarTitle() {
+    const text = document.getElementById('cal-title-text').textContent;
+    const btn = document.getElementById('cal-title-copy');
+    const done = () => { btn.textContent = 'Copied ✓'; setTimeout(() => { btn.textContent = 'Copy'; }, 1500); };
+    if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, () => window.prompt('Copy this title:', text));
+    else window.prompt('Copy this title:', text);
   }
 
   // ── STATE CAPTURE / RESTORE (for drafts) ──
