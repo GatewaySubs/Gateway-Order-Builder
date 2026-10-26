@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>How did we do? · Gateway Subs</title>
+  <meta name="robots" content="noindex"/>
+  <style>
+    /* The page the thank-you email's "Tell us how we did" button opens. Answers go to Supabase (survey_responses). */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root { --navy:#0F172B; --steel:#496E9B; --ink:#0F172B; --muted:#5b6b85; --line:#e3e7ef; --bg:#f3f5f9; --star:#f5b301; }
+    body { background: var(--bg); font-family: Arial, Helvetica, sans-serif; color: var(--ink); min-height: 100vh; padding: 24px 16px; }
+    .card { max-width: 520px; margin: 0 auto; background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+    .top { background: var(--navy); padding: 18px 22px; }
+    .top img { display: block; height: 34px; }
+    .body { padding: 26px 22px 28px; }
+    h1 { font-size: 22px; margin-bottom: 6px; }
+    .sub { color: var(--muted); font-size: 15px; line-height: 1.5; margin-bottom: 22px; }
+    label.q { display: block; font-weight: bold; font-size: 15px; margin-bottom: 10px; }
+    .stars { display: flex; gap: 6px; margin-bottom: 6px; }
+    .stars button { background: none; border: none; font-size: 40px; line-height: 1; cursor: pointer; color: #d5dbe5; padding: 2px; touch-action: manipulation; }
+    .stars button.on { color: var(--star); }
+    .stars button:focus-visible { outline: 2px solid var(--steel); border-radius: 6px; }
+    .star-label { color: var(--muted); font-size: 13px; min-height: 18px; margin-bottom: 22px; }
+    textarea { width: 100%; min-height: 110px; border: 1.5px solid var(--line); border-radius: 10px; padding: 12px; font: inherit; font-size: 15px; resize: vertical; margin-bottom: 20px; }
+    textarea:focus { outline: none; border-color: var(--steel); }
+    .btn { display: inline-block; width: 100%; text-align: center; background: var(--steel); color: #fff; border: none; border-radius: 10px; padding: 14px 18px; font: inherit; font-size: 16px; font-weight: bold; cursor: pointer; text-decoration: none; }
+    .btn:disabled { opacity: .5; cursor: default; }
+    .err { color: #c0392b; font-size: 14px; margin-top: 12px; min-height: 18px; }
+    .done { text-align: center; }
+    .done .big { font-size: 46px; margin-bottom: 8px; }
+    .done p { color: var(--muted); font-size: 15px; line-height: 1.55; margin: 8px 0 20px; }
+    .foot { text-align: center; color: var(--muted); font-size: 12px; margin-top: 16px; }
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="top"><img src="https://square-web-production-f.squarecdn.com/files/c46465d400c2423ff47b6dc6887d3ce86d416959/original.png" alt="Gateway Subs"/></div>
+    <div class="body">
+      <form id="form">
+        <h1 id="hello">Hi there!</h1>
+        <p class="sub">We'd love to hear how it went. We read every answer and use it to make the next one even better.</p>
+
+        <label class="q" id="q1">How was everything?</label>
+        <div class="stars" role="radiogroup" aria-labelledby="q1" id="stars"></div>
+        <div class="star-label" id="starLabel"></div>
+
+        <label class="q" for="comment">Anything we could do better? <span style="font-weight:normal;color:var(--muted)">(optional)</span></label>
+        <textarea id="comment" maxlength="2000" placeholder="Tell us anything: what you loved, what we could improve…"></textarea>
+
+        <button class="btn" id="send" type="submit" disabled>Send</button>
+        <div class="err" id="err"></div>
+      </form>
+
+      <div class="done hidden" id="done">
+        <div class="big">🙏</div>
+        <h1>Thank you!</h1>
+        <p id="doneText">We really appreciate you taking the time. It helps us take even better care of you next time.</p>
+        <a class="btn hidden" id="review" target="_blank" rel="noopener">Leave a Google review</a>
+      </div>
+    </div>
+  </div>
+  <div class="foot">Gateway Subs Catering · (727) 288-7859</div>
+
+<script>
+  const API = 'https://xmewmjzaeltegqsvzrqh.supabase.co/functions/v1/customer-emails';
+  const order = new URLSearchParams(location.search).get('order') || '';
+  const LABELS = ['', 'Not good', 'Could be better', 'Okay', 'Great', 'Loved it!'];
+  let rating = 0, review = null;
+
+  const starsEl = document.getElementById('stars');
+  for (let i = 1; i <= 5; i++) {
+    const b = document.createElement('button');
+    b.type = 'button'; b.textContent = '★'; b.setAttribute('role', 'radio'); b.setAttribute('aria-label', i + ' star' + (i > 1 ? 's' : ''));
+    b.onclick = () => setRating(i);
+    starsEl.appendChild(b);
+  }
+  function setRating(r) {
+    rating = r;
+    [...starsEl.children].forEach((b, i) => { b.classList.toggle('on', i < r); b.setAttribute('aria-checked', String(i + 1 === r)); });
+    document.getElementById('starLabel').textContent = LABELS[r];
+    document.getElementById('send').disabled = false;
+  }
+
+  // Greet by first name and remember the store's review link (if the order is found).
+  if (order) fetch(API + '?action=survey_info&order=' + encodeURIComponent(order))
+    .then((r) => r.ok ? r.json() : null)
+    .then((d) => {
+      if (!d) return;
+      if (d.first && d.first !== 'there') document.getElementById('hello').textContent = 'Hi ' + d.first + '!';
+      review = d.review || null;
+    }).catch(() => {});
+
+  document.getElementById('form').onsubmit = async (e) => {
+    e.preventDefault();
+    if (!rating) return;
+    const btn = document.getElementById('send'), err = document.getElementById('err');
+    btn.disabled = true; btn.textContent = 'Sending…'; err.textContent = '';
+    try {
+      const res = await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'survey', order, rating, comment: document.getElementById('comment').value.trim() }) });
+      if (!res.ok) throw new Error();
+      document.getElementById('form').classList.add('hidden');
+      document.getElementById('done').classList.remove('hidden');
+      if (rating <= 3) document.getElementById('doneText').textContent = "We're sorry it wasn't perfect. Thank you for telling us. We'll be in touch to make it right.";
+      if (review) { const a = document.getElementById('review'); a.href = review; a.classList.remove('hidden'); }
+    } catch (_) {
+      btn.disabled = false; btn.textContent = 'Send';
+      err.textContent = "That didn't go through. Please try again, or call us at (727) 288-7859.";
+    }
+  };
+</script>
+</body>
+</html>
