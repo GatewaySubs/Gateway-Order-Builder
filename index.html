@@ -117,6 +117,20 @@
 
   .section-body { padding: 16px; }
 
+  /* ── STEPS + FOLD-AWAY SECTIONS ── */
+  .step-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 900; font-size: 16px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--navy); margin: 22px 2px 10px; display: flex; align-items: baseline; gap: 10px; }
+  .step-title .step-hint { font-family: 'Barlow', sans-serif; font-size: 12px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--muted); }
+  .section.collapsible .section-header { cursor: pointer; user-select: none; touch-action: manipulation; }
+  .section.collapsible .section-header::after { content: '▾'; margin-left: auto; font-size: 14px; transition: transform 0.15s; }
+  .section.collapsible.collapsed .section-header::after { transform: rotate(-90deg); }
+  .section.collapsible.collapsed .section-body { display: none; }
+  .sec-badge { background: var(--gold); color: var(--navy); border-radius: 20px; font-size: 11px; letter-spacing: 0.5px; padding: 1px 8px; font-weight: 800; }
+  .sec-badge:empty { display: none; }
+  .meal-toggle { display: flex; gap: 8px; margin-bottom: 14px; }
+  .meal-btn { flex: 1; padding: 14px 10px; border: 2px solid var(--border); border-radius: 12px; background: white; font-family: 'Barlow Condensed', sans-serif; font-size: 15px; font-weight: 800; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); cursor: pointer; touch-action: manipulation; }
+  .meal-btn.active { border-color: var(--navy); background: var(--navy); color: white; }
+  .bfast-desc { font-size: 12px; color: var(--muted); margin: -6px 0 10px; }
+
   /* ── FIELDS ── */
   .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; }
   .field:last-child { margin-bottom: 0; }
@@ -721,6 +735,7 @@
   <div class="main">
     <div id="editing-banner" style="margin:0 0 12px;padding:10px 14px;border-radius:10px;font-size:14px;font-weight:700;background:#eef6ee;color:#1d5c2e;border:1px solid #cfe5d3;">🆕 New order</div>
 
+    <div class="step-title" style="margin-top:4px;">① Order Info</div>
     <!-- ORDER INFO -->
     <div class="section">
       <div class="section-header">📋 Order Info</div>
@@ -789,9 +804,24 @@
       </div>
     </div>
 
-    <!-- ORDER TYPE -->
-    <div class="section">
-      <div class="section-header">🥪 What Are They Getting?</div>
+    <div class="step-title">② Main Order <span class="step-hint">tap one or both</span></div>
+    <div class="meal-toggle">
+      <button class="meal-btn active" id="meal-lunch" onclick="toggleMeal('lunch')">🥪 Lunch catering</button>
+      <button class="meal-btn" id="meal-breakfast" onclick="toggleMeal('breakfast')">🍳 Breakfast catering</button>
+    </div>
+
+    <!-- BREAKFAST (individually wrapped) -->
+    <div class="section" id="breakfast-block" style="display:none;">
+      <div class="section-header">🍳 Breakfast · individually wrapped</div>
+      <div class="section-body">
+        <div id="breakfast-container"></div>
+        <button class="add-item-btn" onclick="addBreakfast()">+ Add Breakfast Sandwich</button>
+      </div>
+    </div>
+
+    <!-- ORDER TYPE (lunch) -->
+    <div class="section" id="lunch-block">
+      <div class="section-header">🥪 Lunch · What Are They Getting?</div>
       <div class="section-body">
         <div class="order-type-toggle">
           <button class="order-type-btn active" onclick="setOrderType('racks')" id="obtn-racks">Racks &amp; Platters</button>
@@ -831,8 +861,9 @@
       </div>
     </div>
 
+    <div class="step-title">③ Sides, Drinks &amp; Extras <span class="step-hint">tap a section to open it</span></div>
     <!-- SIDES -->
-    <div class="section">
+    <div class="section collapsible">
       <div class="section-header">🥗 Sides</div>
       <div class="section-body">
 
@@ -870,7 +901,7 @@
     </div>
 
     <!-- SAUCES -->
-    <div class="section">
+    <div class="section collapsible">
       <div class="section-header">🫙 Sauces</div>
       <div class="section-body">
         <div class="counter-row" style="align-items:center;"><label>Hot Honey</label><input type="number" id="s-hothooney" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
@@ -892,7 +923,7 @@
     </div>
 
     <!-- VEGGIES -->
-    <div class="section">
+    <div class="section collapsible">
       <div class="section-header">🥦 Veggies</div>
       <div class="section-body">
         <div class="counter-row" style="align-items:center;"><label>Hot Peppers</label><input type="number" id="v-hotpeppers" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
@@ -910,7 +941,7 @@
     </div>
 
     <!-- CHIPS -->
-    <div class="section">
+    <div class="section collapsible">
       <div class="section-header">🥔 Chips</div>
       <div class="section-body">
         <div class="counter-row" style="align-items:center;"><label>Cool Ranch Doritos</label><input type="number" id="c-coolranch" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
@@ -933,7 +964,7 @@
     </div>
 
     <!-- DRINKS -->
-    <div class="section">
+    <div class="section collapsible">
       <div class="section-header">🥤 Drinks</div>
       <div class="section-body">
         <div class="counter-row" style="align-items:center;"><label>Water Bottle</label><input type="number" id="d-water" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
@@ -956,7 +987,7 @@
     </div>
 
     <!-- CHEESECAKE -->
-    <div class="section">
+    <div class="section collapsible">
       <div class="section-header">🍰 Cheesecake</div>
       <div class="section-body">
         <div class="counter-row" style="align-items:center;"><label>Cheesecake Slice</label><input type="number" id="cheesecake-slice" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
@@ -965,7 +996,7 @@
     </div>
 
     <!-- CUSTOM SIDES -->
-    <div class="section">
+    <div class="section collapsible">
       <div class="section-header">➕ Custom Sides</div>
       <div class="section-body">
         <p style="font-size:13px;color:var(--muted);margin-bottom:10px;">Type in any side not on the menu. Each one auto-adds 1 spoon.</p>
@@ -975,7 +1006,7 @@
     </div>
 
     <!-- SUPPLIES & CONDIMENTS (editable overrides) -->
-    <div class="section">
+    <div class="section collapsible">
       <div class="section-header">🧂 Supplies &amp; Condiments</div>
       <div class="section-body">
         <p class="hint" style="margin:0 0 12px;">Each auto-calculates. Type a number to set it <strong>exactly</strong> — enter <strong>0</strong> for none (e.g. no packets in the boxes).</p>
@@ -991,7 +1022,7 @@
     </div>
 
     <!-- PREP / KITCHEN INSTRUCTIONS -->
-    <div class="section">
+    <div class="section collapsible">
       <div class="section-header">🔪 Prep / Kitchen Instructions</div>
       <div class="section-body">
         <div class="field">
@@ -1000,6 +1031,7 @@
       </div>
     </div>
 
+    <div class="step-title">④ Notes &amp; Allergies</div>
     <!-- NOTES -->
     <div class="section">
       <div class="section-header">📝 Notes</div>
@@ -1026,6 +1058,9 @@
     <div class="section">
       <div class="section-header">📁 Saved Orders</div>
       <div class="section-body">
+        <div class="field" style="margin-bottom:14px;">
+          <input type="search" id="orders-search" placeholder="🔎 Search by name, phone or date (e.g. Bri, 727-555, Oct 30)" autocomplete="off" oninput="showOrders()">
+        </div>
         <div id="drafts-list">
           <p style="color:var(--muted);font-size:14px;text-align:center;padding:20px 0;">No drafts saved yet.<br>Fill out an order and tap Save as Draft.</p>
         </div>
@@ -1633,6 +1668,134 @@
     addSandwichRow(id);
   }
 
+  // ── BREAKFAST (individually wrapped; options from the Square menu) ──
+  const BREAKFAST_ITEMS = {
+    'OG Breakfast':       { meat: true, cheese: true, bread: 'Croissant', desc: 'Egg + cheese + 1 breakfast meat' },
+    'The Breakfast Wrap': { bread: '', desc: "Sausage, bacon, egg, provolone, hot & sweet peppers, G's sweet sauce · flour or spinach wrap" },
+    'Breakfast Beast':    { bread: '', desc: 'Ham, bacon, sausage, egg, cheese, cream cheese, hot honey · everything bagel' },
+    'Monthly Special':    { bread: '', named: 'Which special?', desc: "This month's special — type its name" },
+    'Custom':             { meat: true, cheese: true, bread: 'Croissant', named: 'Describe it', desc: 'Anything off-menu' },
+  };
+  const BREAKFAST_MEATS = ['Bacon','Sausage','Ham','Turkey','Buffalo Chicken','Roast Beef','Pepperoni','No Meat'];
+  const BREAKFAST_BREADS = ['Croissant','Flour Wrap','Spinach Wrap','Gluten Free Wrap','Plain Bagel','Everything Bagel','White Hoagie','Wheat Hoagie'];
+  const BREAKFAST_CHEESES = ['Provolone','Swiss','No Cheese'];
+  let breakfastRows = [], breakfastCount = 0;
+  const optList = (arr, sel) => arr.map(v => `<option value="${v}"${v === sel ? ' selected' : ''}>${v}</option>`).join('');
+
+  function addBreakfast() {
+    breakfastCount++;
+    const id = `bfast-${breakfastCount}`;
+    breakfastRows.push(id);
+    const div = document.createElement('div');
+    div.className = 'item-card';
+    div.id = id;
+    div.innerHTML = `
+      <div class="item-card-header">
+        <span class="item-card-title">Breakfast ${breakfastRows.length}</span>
+        <button class="remove-btn" onclick="removeItem('${id}', breakfastRows)">✕ Remove</button>
+      </div>
+      <div class="row2">
+        <div class="field"><label>Sandwich</label><select id="${id}-item" onchange="onBreakfastItem('${id}')">${optList(Object.keys(BREAKFAST_ITEMS), 'OG Breakfast')}</select></div>
+        <div class="field"><label>How many</label><input type="number" id="${id}-qty" min="1" value="1" inputmode="numeric"></div>
+      </div>
+      <div class="bfast-desc" id="${id}-desc"></div>
+      <div class="field" id="${id}-special-wrap" style="display:none;"><label id="${id}-special-label">Which special?</label><input type="text" id="${id}-special"></div>
+      <div class="row2" id="${id}-mc-wrap">
+        <div class="field"><label>Meat</label><select id="${id}-meat">${optList(BREAKFAST_MEATS, 'Bacon')}</select></div>
+        <div class="field"><label>Cheese</label><select id="${id}-cheese">${optList(BREAKFAST_CHEESES, 'Provolone')}</select></div>
+      </div>
+      <div class="field"><label>Bread</label><select id="${id}-bread"><option value="">As on the menu</option>${optList(BREAKFAST_BREADS, '')}</select></div>
+      <div class="field"><label>Changes (optional)</label><input type="text" id="${id}-mods" placeholder="e.g. add hot honey, no cheese, extra egg"></div>
+      <div class="row2">
+        <div class="field"><label>Name on label (optional)</label><input type="text" id="${id}-name" placeholder="e.g. Jake"></div>
+        <div class="field"><label>Note (optional)</label><input type="text" id="${id}-note" placeholder="e.g. allergy, cut in half"></div>
+      </div>`;
+    document.getElementById('breakfast-container').appendChild(div);
+    onBreakfastItem(id);
+    return id;
+  }
+  // Show only the choices that sandwich has, and pre-pick its usual bread.
+  function onBreakfastItem(id, keepBread) {
+    const item = document.getElementById(id + '-item').value;
+    const def = BREAKFAST_ITEMS[item] || {};
+    document.getElementById(id + '-desc').textContent = def.desc || '';
+    document.getElementById(id + '-mc-wrap').style.display = def.meat ? 'grid' : 'none';
+    document.getElementById(id + '-special-wrap').style.display = def.named ? 'flex' : 'none';
+    document.getElementById(id + '-special-label').textContent = def.named || '';
+    if (!keepBread) document.getElementById(id + '-bread').value = def.bread || '';
+  }
+  function readBreakfast(id) {
+    const v = (k) => (document.getElementById(id + '-' + k)?.value || '').trim();
+    const item = v('item'), def = BREAKFAST_ITEMS[item] || {};
+    return {
+      item, qty: parseInt(v('qty')) || 1,
+      meat: def.meat ? v('meat') : '', cheese: def.cheese ? v('cheese') : '', bread: v('bread'),
+      special: def.named ? v('special') : '', mods: v('mods'), name: v('name'), note: v('note'),
+    };
+  }
+  // "OG Breakfast — Bacon · Croissant · Provolone" (just what the kitchen needs to read).
+  function breakfastLabel(b) {
+    const title = b.item === 'Monthly Special' ? 'Monthly Special' + (b.special ? ': ' + b.special : '')
+      : b.item === 'Custom' ? (b.special || 'Custom breakfast') : b.item;
+    const bits = [b.meat, b.bread, b.cheese].filter(Boolean);
+    return title + (bits.length ? ' — ' + bits.join(' · ') : '');
+  }
+
+  // ── LUNCH / BREAKFAST SWITCHES ──
+  // A hidden part is always empty, so what's on screen is exactly what gets printed.
+  function hasLunchItems() {
+    return [...racks, ...platters, ...boxLunches, ...fullSubs].some(id => document.getElementById(id))
+      || !!document.querySelector('#fullsub-custom-container > div');
+  }
+  function setMealShown(meal, on) {
+    document.getElementById(meal + '-block').style.display = on ? 'block' : 'none';
+    document.getElementById('meal-' + meal).classList.toggle('active', on);
+  }
+  function toggleMeal(meal) {
+    const on = document.getElementById(meal + '-block').style.display !== 'none';
+    if (!on) {
+      setMealShown(meal, true);
+      if (meal === 'breakfast' && !breakfastRows.some(id => document.getElementById(id))) addBreakfast();
+      return;
+    }
+    const filled = meal === 'lunch' ? hasLunchItems() : breakfastRows.some(id => document.getElementById(id));
+    if (filled && !confirm('Remove the ' + meal + ' items from this order?')) return;
+    if (meal === 'lunch') {
+      racks = []; platters = []; boxLunches = []; fullSubs = [];
+      ['racks-container','platters-container','boxlunch-container','fullsubs-container','fullsub-custom-container']
+        .forEach(c => { const el = document.getElementById(c); if (el) el.innerHTML = ''; });
+    } else {
+      breakfastRows = []; document.getElementById('breakfast-container').innerHTML = '';
+    }
+    setMealShown(meal, false);
+  }
+
+  // ── FOLD-AWAY SECTIONS (step ③) — closed by default, with a count of what's filled in ──
+  function sectionCount(sec) {
+    const body = sec.querySelector('.section-body');
+    let n = 0;
+    body.querySelectorAll('input[type="number"]').forEach(el => { if ((parseInt(el.value) || 0) > 0) n++; });
+    body.querySelectorAll('.count').forEach(el => { if ((parseInt(el.textContent) || 0) > 0) n++; });
+    body.querySelectorAll('input[type="text"], textarea').forEach(el => { if (el.value.trim()) n++; });
+    return n;
+  }
+  function updateSectionBadges() {
+    document.querySelectorAll('.section.collapsible').forEach(sec => {
+      const b = sec.querySelector('.sec-badge'); if (b) { const n = sectionCount(sec); b.textContent = n ? n + ' added' : ''; }
+    });
+  }
+  function initCollapsibles() {
+    document.querySelectorAll('.section.collapsible').forEach(sec => {
+      const h = sec.querySelector('.section-header');
+      if (!h.querySelector('.sec-badge')) h.insertAdjacentHTML('beforeend', '<span class="sec-badge"></span>');
+      sec.classList.add('collapsed');
+      h.addEventListener('click', () => sec.classList.toggle('collapsed'));
+    });
+    const form = document.getElementById('tab-form');
+    form.addEventListener('input', updateSectionBadges);
+    form.addEventListener('click', () => setTimeout(updateSectionBadges, 0));
+  }
+
   function removeItem(id, arr) {
     const idx = arr.indexOf(id);
     if (idx > -1) arr.splice(idx, 1);
@@ -1684,7 +1847,7 @@
     // mayo/mustard) inside each box, so a box-only order prints NO supplies section.
     const hasNonBoxFood = racks.some(id => document.getElementById(id)) ||
       platters.some(id => document.getElementById(id)) ||
-      fullSubs.some(id => document.getElementById(id)) || salads > 0;
+      fullSubs.some(id => document.getElementById(id)) || breakfastRows.some(id => document.getElementById(id)) || salads > 0;
     const napkins = hasNonBoxFood ? (headcount > 0 ? headcount : (salads > 0 ? salads * 8 : 20)) : 0;
 
     // Box lunches excluded — mayo/mustard internally included
@@ -1792,6 +1955,20 @@
       ${headerLine3 ? `<div class="sheet-meta" style="margin-top:2px;font-size:12px;">${headerLine3}</div>` : ''}
       ${headcount ? `<div class="sheet-badges"><span class="badge-pill">${headcount} People</span></div>` : ''}
     </div><div class="sheet-body">`;
+
+    // BREAKFAST — individually wrapped, one line per sandwich build
+    const activeBreakfast = breakfastRows.filter(id => document.getElementById(id)).map(readBreakfast);
+    if (activeBreakfast.length > 0) {
+      const total = activeBreakfast.reduce((a, b) => a + b.qty, 0);
+      html += `<div class="sheet-section"><div class="sheet-section-title">Breakfast — ${total} individually wrapped</div>`;
+      activeBreakfast.forEach(b => {
+        html += `<div class="sheet-item"><span class="sheet-qty">${b.qty}x</span><span class="sheet-name"><strong>${escHtml(breakfastLabel(b))}</strong></span></div>`;
+        if (b.mods) html += `<div class="sheet-sub" style="color:var(--green);font-weight:600;">${escHtml(b.mods)}</div>`;
+        if (b.name) html += `<div class="sheet-sub sheet-sub-check">Label: <strong>${escHtml(b.name)}</strong></div>`;
+        if (b.note) html += `<div class="sheet-sub" style="color:var(--blue);font-style:italic;">Note: ${escHtml(b.note)}</div>`;
+      });
+      html += `</div>`;
+    }
 
     // RACKS
     const activeRacks = racks.filter(id => document.getElementById(id));
@@ -2217,7 +2394,7 @@
       <div class="draft-card">
         <div class="draft-info">
           <div class="draft-title">${escHtml(who)} ${badge}</div>
-          <div class="draft-meta">${escHtml(o.event_date || 'no date')}${src}</div>
+          <div class="draft-meta">${escHtml(o.event_date ? prettyDate(o.event_date) + ', ' + o.event_date.slice(0, 4) : 'no date')}${o.customers && o.customers.phone ? ' · ' + escHtml(o.customers.phone.replace(/^\+1(\d{3})(\d{3})(\d{4})$/, '$1-$2-$3')) : ''}${src}</div>
         </div>
         <div class="draft-actions">
           <button class="draft-load-btn" onclick="loadDraft('${o.id}')">Load</button>
@@ -2234,12 +2411,41 @@
     tog.textContent = (show ? '▾' : '▸') + ' Past orders (' + (tog.dataset.count || '') + ')';
   }
 
+  // Search box on the Orders tab: name, phone digits, or date ("Oct 30", "10/30", "2026-10-30").
+  let allOrders = [];
+  function orderMatches(o, q) {
+    const words = q.toLowerCase().split(/\s+/).filter(Boolean);
+    const name = [o.client_name, o.customers && o.customers.name].filter(Boolean).join(' ').toLowerCase();
+    const phone = String((o.customers && o.customers.phone) || '').replace(/\D/g, '');
+    let dateText = o.event_date || '';
+    if (o.event_date) { const [, m, d] = o.event_date.split('-').map(Number); dateText += ' ' + prettyDate(o.event_date).toLowerCase() + ` ${m}/${d}`; }
+    return words.every(w => {
+      const digits = w.replace(/\D/g, '');
+      return name.includes(w) || dateText.includes(w) || (digits.length >= 3 && digits === w.replace(/[^\d]/g, '') && phone.includes(digits));
+    });
+  }
+  function showOrders() {
+    const list = document.getElementById('drafts-list');
+    const q = (document.getElementById('orders-search')?.value || '').trim();
+    if (!q) return renderOrderList(list, allOrders);
+    const hits = allOrders.filter(o => orderMatches(o, q)).sort((a, b) => String(b.event_date || '').localeCompare(String(a.event_date || '')));
+    list.innerHTML = `<p style="color:var(--muted);font-size:13px;margin:0 0 10px;">${hits.length} order${hits.length === 1 ? '' : 's'} found, newest first (includes past orders)</p>`
+      + (hits.length ? hits.map(orderCardHtml).join('') : '<p style="color:var(--muted);font-size:14px;text-align:center;padding:16px 0;">No saved orders match that.</p>');
+  }
+
   async function renderDrafts() {
     const list = document.getElementById('drafts-list');
     if (!staffKey()) { list.innerHTML = '<p style="color:var(--muted);font-size:14px;text-align:center;padding:20px 0;">Enter the staff passcode to see saved orders.</p>'; showPasscodeGate(); return; }
     list.innerHTML = '<p style="color:var(--muted);font-size:14px;text-align:center;padding:20px 0;">Loading…</p>';
     try {
-      const { orders } = await staffApi('/staff-orders?action=list');
+      const { orders } = await staffApi('/staff-orders?action=list&days=365');
+      allOrders = orders || [];
+      if ((document.getElementById('orders-search')?.value || '').trim()) return showOrders();
+      renderOrderList(list, allOrders);
+    } catch (e) { if (e.message !== 'unauthorized') list.innerHTML = '<p style="color:var(--red);font-size:14px;text-align:center;padding:20px 0;">Could not load orders.</p>'; }
+  }
+  function renderOrderList(list, orders) {
+    {
       if (!orders || !orders.length) {
         list.innerHTML = '<p style="color:var(--muted);font-size:14px;text-align:center;padding:20px 0;">No saved orders yet.<br>Build an order, then tap Save Draft or Save Order.</p>';
         return;
@@ -2257,7 +2463,7 @@
         html += `<div id="past-list" style="display:none;margin-top:10px;opacity:0.8;">${past.map(orderCardHtml).join('')}</div>`;
       }
       list.innerHTML = html;
-    } catch (e) { if (e.message !== 'unauthorized') list.innerHTML = '<p style="color:var(--red);font-size:14px;text-align:center;padding:20px 0;">Could not load orders.</p>'; }
+    }
   }
 
   // ── CALENDAR TITLE (suggested, so every store calendar reads the same way; the calendar shows the time) ──
@@ -2265,6 +2471,8 @@
   function calendarTitle(s) {
     const n = (v) => parseInt(v, 10) || 0;
     const items = [];
+    const bfast = (s.breakfast || []).reduce((a, b) => a + (n(b.qty) || 1), 0);
+    if (bfast) items.push(`${bfast} breakfast sandwich${bfast === 1 ? '' : 'es'}`);
     (s.racks || []).forEach(r => {
       const size = n(r.size), qty = n(r.qty) || 1;
       if (!size) return;
@@ -2369,6 +2577,7 @@
     state.fullSubCustom = Array.from(document.querySelectorAll('#fullsub-custom-container > div'))
       .map(d => ({ qty: d.querySelector('.fsub-custom-qty')?.value || '1', text: d.querySelector('.fsub-custom-input')?.value || '' }))
       .filter(x => x.text.trim());
+    state.breakfast = breakfastRows.filter(id => document.getElementById(id)).map(readBreakfast);
 
     return state;
   }
@@ -2534,6 +2743,21 @@
       });
     }
 
+    breakfastRows = []; breakfastCount = 0;
+    document.getElementById('breakfast-container').innerHTML = '';
+    (state.breakfast || []).forEach(b => {
+      const id = addBreakfast();
+      const set = (k, val) => { const el = document.getElementById(id + '-' + k); if (el && val != null) el.value = val; };
+      set('item', BREAKFAST_ITEMS[b.item] ? b.item : 'Custom');
+      onBreakfastItem(id);
+      set('qty', b.qty || 1); set('meat', b.meat || 'Bacon'); set('cheese', b.cheese || 'Provolone'); set('bread', b.bread || '');
+      set('special', b.special || (BREAKFAST_ITEMS[b.item] ? '' : b.item)); set('mods', b.mods); set('name', b.name); set('note', b.note);
+    });
+    // Show the parts this order uses (older orders without breakfast open on lunch as before).
+    const hasBreakfast = breakfastRows.length > 0;
+    setMealShown('breakfast', hasBreakfast);
+    setMealShown('lunch', hasLunchItems() || !hasBreakfast);
+
     // Restore custom sides
     document.getElementById('custom-sides-container').innerHTML = '';
     customSideCount = 0;
@@ -2551,6 +2775,7 @@
     if (n.drinks && document.getElementById('note-drinks')) { document.getElementById('note-drinks').value = n.drinks; document.getElementById('note-drinks').style.display = 'block'; }
 
     refreshSupplyPlaceholders();
+    updateSectionBadges();
   }
 
   // Update showTab to include drafts
@@ -2719,6 +2944,7 @@
   const buildForm = document.getElementById('tab-form');
   if (buildForm) buildForm.addEventListener('input', refreshSupplyPlaceholders);
   refreshSupplyPlaceholders();
+  initCollapsibles();
   renderDrafts();
   if (!staffKey()) showPasscodeGate();
 </script>
