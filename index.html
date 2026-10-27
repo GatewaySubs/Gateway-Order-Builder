@@ -967,6 +967,7 @@
     <div class="section collapsible">
       <div class="section-header">🥤 Drinks</div>
       <div class="section-body">
+        <div class="counter-row" style="align-items:center;"><label>Hot Coffee Carton (96 oz)<br><span style="font-size:12px;color:var(--muted);font-weight:500;">auto-adds a 12 oz milk, cups &amp; sugars</span></label><input type="number" id="d-coffee" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
         <div class="counter-row" style="align-items:center;"><label>Water Bottle</label><input type="number" id="d-water" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
         <div class="counter-row" style="align-items:center;"><label>Pepsi</label><input type="number" id="d-pepsi" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
         <div class="counter-row" style="align-items:center;"><label>Diet Pepsi</label><input type="number" id="d-dietpepsi" min="0" placeholder="0" inputmode="numeric" style="width:70px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
@@ -1018,6 +1019,9 @@
         <div class="counter-row" style="align-items:center;"><label>Forks</label><input type="number" id="sup-forks" min="0" placeholder="auto: 0" inputmode="numeric" style="width:84px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
         <div class="counter-row" style="align-items:center;"><label>Spoons</label><input type="number" id="sup-spoons" min="0" placeholder="auto: 0" inputmode="numeric" style="width:84px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
         <div class="counter-row" style="align-items:center;"><label>Cups</label><input type="number" id="sup-cups" min="0" placeholder="auto: 0" inputmode="numeric" style="width:84px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>12 oz Milk (for coffee)</label><input type="number" id="sup-milk" min="0" placeholder="auto: 0" inputmode="numeric" style="width:84px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Hot Cups (coffee)</label><input type="number" id="sup-hotcups" min="0" placeholder="auto: 0" inputmode="numeric" style="width:84px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
+        <div class="counter-row" style="align-items:center;"><label>Sugars</label><input type="number" id="sup-sugars" min="0" placeholder="auto: 0" inputmode="numeric" style="width:84px;border:1.5px solid var(--border);border-radius:8px;padding:8px;font-size:16px;text-align:center;font-family:'Barlow',sans-serif;"></div>
       </div>
     </div>
 
@@ -1673,6 +1677,7 @@
     'OG Breakfast':       { meat: true, cheese: true, bread: 'Croissant', desc: 'Egg + cheese + 1 breakfast meat' },
     'The Breakfast Wrap': { bread: '', desc: "Sausage, bacon, egg, provolone, hot & sweet peppers, G's sweet sauce · flour or spinach wrap" },
     'Breakfast Beast':    { bread: '', desc: 'Ham, bacon, sausage, egg, cheese, cream cheese, hot honey · everything bagel' },
+    "CT's Protein Popper": { bread: '', desc: '2 egg patties as the bun, sausage, provolone' },
     'Monthly Special':    { bread: '', named: 'Which special?', desc: "This month's special — type its name" },
     'Custom':             { meat: true, cheese: true, bread: 'Croissant', named: 'Describe it', desc: 'Anything off-menu' },
   };
@@ -1863,7 +1868,13 @@
     const mustard = totalSubs > 0 ? Math.round(totalSubs * 0.333) : 0;
     const totalForksAll = forks + cheesecakeForks;
     const totalPlatesAll = totalPlates + cheesecakePlates;
-    return { plates: totalPlatesAll, forks: totalForksAll, spoons, cups, tongs, napkins, mayo, mustard };
+    // Hot coffee: 1 × 12 oz milk per carton; hot cups + sugars = headcount (1 per person),
+    // or 12 per carton (a 96 oz carton pours twelve 8 oz cups) when there's no headcount.
+    const coffee = getVal('d-coffee');
+    const milk = coffee;
+    const hotcups = coffee > 0 ? (headcount > 0 ? headcount : 12 * coffee) : 0;
+    const sugars = hotcups;
+    return { plates: totalPlatesAll, forks: totalForksAll, spoons, cups, tongs, napkins, mayo, mustard, milk, hotcups, sugars };
   }
 
   // ── SUPPLIES: smart auto-default vs. manual override ──
@@ -1892,6 +1903,9 @@
       napkins: supplyOverride('sup-napkins', a.napkins),
       mayo: supplyOverride('sup-mayo', a.mayo),
       mustard: supplyOverride('sup-mustard', a.mustard),
+      milk: supplyOverride('sup-milk', a.milk),
+      hotcups: supplyOverride('sup-hotcups', a.hotcups),
+      sugars: supplyOverride('sup-sugars', a.sugars),
       napkinsOverridden: isSupplyOverridden('sup-napkins'),
     };
   }
@@ -1900,7 +1914,7 @@
     const a = calcUtensilsAuto();
     const map = { 'sup-mayo': a.mayo, 'sup-mustard': a.mustard, 'sup-napkins': a.napkins,
       'sup-tongs': a.tongs, 'sup-plates': a.plates, 'sup-forks': a.forks,
-      'sup-spoons': a.spoons, 'sup-cups': a.cups };
+      'sup-spoons': a.spoons, 'sup-cups': a.cups, 'sup-milk': a.milk, 'sup-hotcups': a.hotcups, 'sup-sugars': a.sugars };
     Object.entries(map).forEach(([id, v]) => { const el = document.getElementById(id); if (el) el.placeholder = 'auto: ' + v; });
   }
 
@@ -2152,11 +2166,15 @@
     }
 
     // DRINKS
-    const drinkMap = {'d-water':'Water Bottle','d-pepsi':'Pepsi','d-dietpepsi':'Diet Pepsi','d-starry':'Starry','d-odyssey':'Odyssey Elixir Energy','d-gatorade':'Gatorade','d-sweettea':'Sweet Tea','d-unsweettea':'Unsweet Tea','d-gallon-sweet':'Gallon Sweet Tea','d-gallon-unsweet':'Gallon Unsweet Tea','d-gallon-coldbrew':'Gallon Cold Brew','d-lemonade':'Gallon Lemonade'};
+    const drinkMap = {'d-coffee':'Hot Coffee Carton (96 oz)','d-water':'Water Bottle','d-pepsi':'Pepsi','d-dietpepsi':'Diet Pepsi','d-starry':'Starry','d-odyssey':'Odyssey Elixir Energy','d-gatorade':'Gatorade','d-sweettea':'Sweet Tea','d-unsweettea':'Unsweet Tea','d-gallon-sweet':'Gallon Sweet Tea','d-gallon-unsweet':'Gallon Unsweet Tea','d-gallon-coldbrew':'Gallon Cold Brew','d-lemonade':'Gallon Lemonade'};
     const activeDrinks = Object.entries(drinkMap).filter(([id]) => getVal(id) > 0);
+    if (!activeDrinks.length && u.milk > 0) activeDrinks.push(['d-coffee-milk-only', '']);
     if (activeDrinks.length) {
       html += `<div class="sheet-section"><div class="sheet-section-title">Drinks</div>`;
-      activeDrinks.forEach(([id,label]) => { html += `<div class="sheet-item"><span class="sheet-qty">${getVal(id)}x</span><span class="sheet-name">${label}</span></div>`; });
+      activeDrinks.forEach(([id,label]) => {
+        html += `<div class="sheet-item"><span class="sheet-qty">${getVal(id)}x</span><span class="sheet-name">${label}</span></div>`;
+        if (id === 'd-coffee' && u.milk > 0) html += `<div class="sheet-item"><span class="sheet-qty">${u.milk}x</span><span class="sheet-name">12 oz Milk (for coffee)</span></div>`;
+      });
       html += `</div>`;
     }
 
@@ -2197,6 +2215,8 @@
       {label:'Forks', val:u.forks, showVal:true},
       {label:'Spoons', val:u.spoons, showVal:true},
       {label:'Cups', val:u.cups, showVal:true},
+      {label:'Hot Cups', val:u.hotcups, showVal:true},
+      {label:'Sugars', val:u.sugars, showVal:true},
       {label:tongLabel, val:u.tongs, showVal:true},
       {label:'Napkins', val:u.napkins, showVal:!!u.napkinsOverridden},
       {label:'Mayo', val:u.mayo, showVal:true},
@@ -2531,6 +2551,9 @@
         forks: document.getElementById('sup-forks')?.value || '',
         spoons: document.getElementById('sup-spoons')?.value || '',
         cups: document.getElementById('sup-cups')?.value || '',
+        milk: document.getElementById('sup-milk')?.value || '',
+        hotcups: document.getElementById('sup-hotcups')?.value || '',
+        sugars: document.getElementById('sup-sugars')?.value || '',
       },
       prep: document.getElementById('prep-notes')?.value || '',
       // counters
@@ -2548,7 +2571,7 @@
       }
     };
 
-    const counterIds = ['side-salad','side-salad-chicken','s-hothooney','s-buffalo','s-caesar','s-subsauce','s-horseradish','s-spicyranch','s-sweet','s-chipotle','s-sweettang','s-ranch','s-balsamic','v-hotpeppers','v-sweetpeppers','v-banana','v-olives','v-spinach','v-cucumber','v-pickles','d-water','d-pepsi','d-dietpepsi','d-starry','d-odyssey','d-gatorade','d-lemonade','d-sweettea','d-unsweettea','d-gallon-sweet','d-gallon-unsweet','d-gallon-coldbrew','cheesecake-slice','cheesecake-whole'];
+    const counterIds = ['side-salad','side-salad-chicken','s-hothooney','s-buffalo','s-caesar','s-subsauce','s-horseradish','s-spicyranch','s-sweet','s-chipotle','s-sweettang','s-ranch','s-balsamic','v-hotpeppers','v-sweetpeppers','v-banana','v-olives','v-spinach','v-cucumber','v-pickles','d-coffee','d-water','d-pepsi','d-dietpepsi','d-starry','d-odyssey','d-gatorade','d-lemonade','d-sweettea','d-unsweettea','d-gallon-sweet','d-gallon-unsweet','d-gallon-coldbrew','cheesecake-slice','cheesecake-whole'];
     counterIds.forEach(id => { state.counters[id] = getVal(id); });
 
     const chipIds = ['c-coolranch','c-sweetchilidoritos','c-bbq','c-saltvinegar','c-seasalt','c-jalapeno','c-voodoo','c-cheddar','c-variety'];
@@ -2625,7 +2648,7 @@
     document.getElementById('cookies-qty').value = state.cookies || '';
     // Supplies & condiments overrides (blank = auto)
     const sup = state.supplies || {};
-    ['mayo','mustard','napkins','tongs','plates','forks','spoons','cups'].forEach(k => {
+    ['mayo','mustard','napkins','tongs','plates','forks','spoons','cups','milk','hotcups','sugars'].forEach(k => {
       const el = document.getElementById('sup-' + k); if (el) el.value = sup[k] || '';
     });
     // Backward-compat: older drafts stored an additive "extra plates" value.
