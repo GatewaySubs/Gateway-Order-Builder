@@ -719,6 +719,7 @@
 <!-- ══════════════ FORM TAB ══════════════ -->
 <div id="tab-form">
   <div class="main">
+    <div id="editing-banner" style="margin:0 0 12px;padding:10px 14px;border-radius:10px;font-size:14px;font-weight:700;background:#eef6ee;color:#1d5c2e;border:1px solid #cfe5d3;">🆕 New order</div>
 
     <!-- ORDER INFO -->
     <div class="section">
@@ -1081,6 +1082,49 @@
   // ── STAFF API (passcode-gated cloud sync to Supabase) ──
   const STAFF_API = 'https://xmewmjzaeltegqsvzrqh.supabase.co/functions/v1';
   let currentOrderId = null;   // set on save/load so re-saving updates the same order instead of duplicating
+  let currentOrderClient = '';  // the customer the linked order was opened/saved for
+  const normName = (s) => String(s || '').trim().toLowerCase().replace(/\s+/g, ' ');
+  function prettyDate(ymd) {
+    if (!ymd) return 'no date';
+    const [y, m, d] = ymd.split('-').map(Number);
+    return new Date(y, m - 1, d).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+  // Which saved order this form updates (null = a new order), shown in the banner at the top of the form.
+  function setCurrentOrder(id, client, date) {
+    currentOrderId = id || null;
+    currentOrderClient = id ? (client || '') : '';
+    const b = document.getElementById('editing-banner'); if (!b) return;
+    if (currentOrderId) {
+      b.textContent = '✏️ Editing saved order: ' + (client || '(no name)') + ' · ' + prettyDate(date) + '. Saving or sending updates this order and its calendar event.';
+      b.style.background = '#fff6e0'; b.style.color = '#7a5200'; b.style.borderColor = '#f0dca8';
+    } else {
+      b.textContent = '🆕 New order';
+      b.style.background = '#eef6ee'; b.style.color = '#1d5c2e'; b.style.borderColor = '#cfe5d3';
+    }
+  }
+  // Before saving: make sure an edit updates the order it belongs to instead of making a copy.
+  // • Not linked, but a saved order has the same customer + date → offer to update that one.
+  // • Linked, but the customer name changed → probably a different order; offer to save it as new.
+  async function checkOrderLink(state) {
+    if (currentOrderId) {
+      if (currentOrderClient && state.client && normName(state.client) !== normName(currentOrderClient)
+          && confirm('This form was opened from ' + currentOrderClient + "'s order, but the customer is now " + state.client + '.\n\nOK = save it as a NEW order for ' + state.client + '\nCancel = update ' + currentOrderClient + "'s order")) {
+        setCurrentOrder(null);
+      }
+      return;
+    }
+    if (!state.client || !state.date) return;
+    try {
+      const { orders } = await staffApi('/staff-orders?action=list');
+      const same = (orders || []).filter((o) => o.event_date === state.date
+        && [o.client_name, o.customers && o.customers.name].some((n) => n && normName(n) === normName(state.client)));
+      if (!same.length) return;
+      const pick = same.find((o) => o.status === 'confirmed') || same[0];
+      if (confirm('You already have a saved order for ' + state.client + ' on ' + prettyDate(state.date) + (same.length > 1 ? ' (' + same.length + ' saved)' : '') + '.\n\nOK = update that order (and its calendar event)\nCancel = keep this as a separate, new order')) {
+        setCurrentOrder(pick.id, state.client, state.date);
+      }
+    } catch (e) { if (e.message === 'unauthorized') throw e; /* can't check right now: carry on as before */ }
+  }
   function staffKey() { return localStorage.getItem('gw-staff-key') || ''; }
   async function staffApi(path, opts = {}) {
     const res = await fetch(STAFF_API + path, {
@@ -1170,7 +1214,7 @@
       if (!order) { alert('No previous order found for this customer.'); return; }
       if (!confirm("Load this customer's last order into a NEW order? The current form will be replaced.")) return;
       restoreState(order.builder_state || {});
-      currentOrderId = null;  // reorder = a fresh order; don't overwrite the original
+      setCurrentOrder(null);  // reorder = a fresh order; don't overwrite the original
       showTab('form');
     } catch (e) { if (e.message !== 'unauthorized') alert('Could not load the last order.'); }
   }
@@ -2095,8 +2139,9 @@
     btn.disabled = true; btn.textContent = '⏳ Sending to the calendar…';
     try {
       if (!document.querySelector('#order-sheet .sheet-header')) generateOrder();
+      await checkOrderLink(state);
       const saved = await staffApi('/staff-orders', { method: 'POST', body: orderPayload(state, 'confirmed') });
-      currentOrderId = saved.id;
+      setCurrentOrder(saved.id, state.client, state.date);
       const pdfBase64 = await sheetPdfBase64();
       const res = await fetch(STAFF_API + '/calendar-sync', {
         method: 'POST', headers: { 'X-Staff-Key': staffKey(), 'Content-Type': 'application/json' },
@@ -2130,8 +2175,9 @@
     // Cloud save (primary) — builds the shared customer book + order history in Supabase.
     if (!staffKey()) { showPasscodeGate(); return; }
     try {
+      await checkOrderLink(state);
       const r = await staffApi('/staff-orders', { method: 'POST', body: orderPayload(state, status) });
-      currentOrderId = r.id;
+      setCurrentOrder(r.id, state.client, state.date);
       alert(status === 'confirmed'
         ? '✅ Order saved: ' + name + (state.date ? '\n\nIt stays in Saved Orders until the day after the event.' : '\n\n(Tip: add an event date so it auto-files after the event.)')
         : '💾 Draft saved: ' + name);
@@ -2146,7 +2192,7 @@
       if (!order) { alert('Order not found.'); return; }
       if (!confirm('Load this order? The current form will be replaced.')) return;
       restoreState(order.builder_state || {});
-      currentOrderId = order.id;   // editing this order → re-save updates it (no duplicate)
+      setCurrentOrder(order.id, (order.builder_state || {}).client, order.event_date || (order.builder_state || {}).date);   // editing this order → re-save updates it (no duplicate)
       showTab('form');
     } catch (e) { if (e.message !== 'unauthorized') alert('Could not load that order.'); }
   }
@@ -2155,7 +2201,7 @@
     if (!confirm('Delete this saved order?')) return;
     try {
       await staffApi('/staff-orders', { method: 'POST', body: { action: 'delete', id } });
-      if (currentOrderId === id) currentOrderId = null;
+      if (currentOrderId === id) setCurrentOrder(null);
       renderDrafts();
     } catch (e) { if (e.message !== 'unauthorized') alert('Could not delete.'); }
   }
