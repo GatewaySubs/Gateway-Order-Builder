@@ -1966,7 +1966,7 @@
     let html = `<div class="sheet-header">
       <h2>${headerLine1}</h2>
       ${headerLine2 ? `<div class="sheet-meta">${headerLine2}</div>` : ''}
-      ${deliveryAddress ? `<div class="sheet-meta" style="margin-top:2px;">Delivery to: ${deliveryAddress}</div>` : ''}
+      ${fulfillment === 'delivery' && deliveryAddress ? `<div class="sheet-meta" style="margin-top:2px;">Delivery to: ${deliveryAddress}</div>` : ''}
       ${headerLine3 ? `<div class="sheet-meta" style="margin-top:2px;font-size:12px;">${headerLine3}</div>` : ''}
       ${headcount ? `<div class="sheet-badges"><span class="badge-pill">${headcount} People</span></div>` : ''}
     </div><div class="sheet-body">`;
@@ -2336,7 +2336,7 @@
     const btn = document.getElementById('btn-send-cal');
     btn.disabled = true; btn.textContent = '⏳ Sending to the calendar…';
     try {
-      if (!document.querySelector('#order-sheet .sheet-header')) generateOrder();
+      generateOrder();   // fresh sheet, so the calendar PDF matches the form exactly (not an older Generate)
       await checkOrderLink(state);
       const saved = await staffApi('/staff-orders', { method: 'POST', body: orderPayload(state, 'confirmed') });
       setCurrentOrder(saved.id, state.client, state.date);
@@ -2925,7 +2925,7 @@
       if (supplyItems.length) {
         suppliesHtml = `<div style="margin-top:${fontSize}px;padding-top:${fontSize * 0.5}px;border-top:2px solid #000;text-align:center;">
           <div style="font-size:${sectionFs};font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:${fontSize * 0.3}px;">Supplies Needed</div>
-          <div style="font-size:${fs};font-weight:600;display:flex;flex-wrap:wrap;justify-content:center;gap:6px 0;">${supplyItems.map(s => `<span style='white-space:nowrap;display:inline-flex;align-items:center;gap:4px;'><span style='width:14px;height:14px;border:1.5px solid #000;border-radius:2px;display:inline-block;flex-shrink:0;'></span>${s}</span>`).join('<span style="margin:0 4px;">·</span>')}</div>
+          <div style="font-size:${fs};font-weight:600;line-height:1.7;">${supplyItems.map(s => `<span style="white-space:nowrap;"><span style="display:inline-block;width:13px;height:13px;border:1.5px solid #000;border-radius:2px;vertical-align:-2px;margin-right:4px;"></span>${s}</span>`).join(' &nbsp;·&nbsp; ')}</div>
         </div>`;
       }
     }
