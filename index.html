@@ -1089,8 +1089,9 @@
     <p class="hint" style="margin-bottom:12px;text-align:center;">On iPhone: Print → tap the preview → Share → Save to Files or send to Slack</p>
     <div id="cal-title-box" style="display:none;align-items:center;gap:10px;background:#fff;border:1.5px dashed var(--border);border-radius:10px;padding:10px 12px;margin-bottom:12px;">
       <div style="flex:1;min-width:0;">
-        <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;">📅 Calendar title</div>
-        <div id="cal-title-text" style="font-size:15px;font-weight:600;word-break:break-word;"></div>
+        <div style="font-size:11px;font-weight:700;color:var(--muted);letter-spacing:1px;text-transform:uppercase;">📅 Calendar title <span style="text-transform:none;letter-spacing:0;font-weight:600;">(tap to edit)</span></div>
+        <input type="text" id="cal-title-text" oninput="onCalTitleInput()" style="width:100%;border:none;border-bottom:1.5px solid var(--border);padding:4px 0;font-size:15px;font-weight:600;font-family:'Barlow',sans-serif;color:var(--text);background:transparent;">
+        <div id="cal-title-custom" style="display:none;font-size:12px;color:var(--muted);margin-top:4px;">Your own title is used for the calendar. <a href="#" onclick="resetCalTitle();return false;">↺ Use the suggested one</a></div>
       </div>
       <button class="size-btn" id="cal-title-copy" onclick="copyCalendarTitle()" style="width:auto;padding:0 14px;">Copy</button>
     </div>
@@ -1254,6 +1255,7 @@
       if (!confirm("Load this customer's last order into a NEW order? The current form will be replaced.")) return;
       restoreState(order.builder_state || {});
       setCurrentOrder(null);  // reorder = a fresh order; don't overwrite the original
+      customCalTitle = '';
       showTab('form');
     } catch (e) { if (e.message !== 'unauthorized') alert('Could not load the last order.'); }
   }
@@ -2243,9 +2245,7 @@
 
     html += `</div>`;
     document.getElementById('order-sheet').innerHTML = html;
-    const calTitle = calendarTitle(captureState());
-    document.getElementById('cal-title-text').textContent = calTitle;
-    document.getElementById('cal-title-box').style.display = calTitle ? 'flex' : 'none';
+    showCalTitle();
     showTab('preview');
     window.scrollTo(0, 0);
     // Auto-build print sheet
@@ -2343,7 +2343,7 @@
       const pdfBase64 = await sheetPdfBase64();
       const res = await fetch(STAFF_API + '/calendar-sync', {
         method: 'POST', headers: { 'X-Staff-Key': staffKey(), 'Content-Type': 'application/json' },
-        body: JSON.stringify({ orderId: saved.id, title: calendarTitle(state), pdfBase64 }),
+        body: JSON.stringify({ orderId: saved.id, title: orderCalendarTitle(state), pdfBase64 }),
       });
       const out = await res.json().catch(() => ({}));
       if (res.status === 401) { showPasscodeGate('That passcode did not work — try again.'); return; }
@@ -2519,8 +2519,24 @@
     if (!who && !items.length) return '';
     return `${s.fulfillment === 'delivery' ? 'Delivery' : 'Pickup'}: ${[who, items.join(' + ')].filter(Boolean).join(' ')}`;
   }
+  // A title typed on the Order Sheet replaces the suggested one (saved with the order as calendarTitle).
+  let customCalTitle = '';
+  const orderCalendarTitle = (s) => (s.calendarTitle || '').trim() || calendarTitle(s);
+  function showCalTitle() {
+    const suggested = calendarTitle(captureState());
+    const title = customCalTitle || suggested;
+    document.getElementById('cal-title-text').value = title;
+    document.getElementById('cal-title-custom').style.display = customCalTitle ? 'block' : 'none';
+    document.getElementById('cal-title-box').style.display = title ? 'flex' : 'none';
+  }
+  function onCalTitleInput() {
+    const v = document.getElementById('cal-title-text').value.trim();
+    customCalTitle = v && v !== calendarTitle(captureState()) ? v : '';
+    document.getElementById('cal-title-custom').style.display = customCalTitle ? 'block' : 'none';
+  }
+  function resetCalTitle() { customCalTitle = ''; showCalTitle(); }
   function copyCalendarTitle() {
-    const text = document.getElementById('cal-title-text').textContent;
+    const text = document.getElementById('cal-title-text').value;
     const btn = document.getElementById('cal-title-copy');
     const done = () => { btn.textContent = 'Copied ✓'; setTimeout(() => { btn.textContent = 'Copy'; }, 1500); };
     if (navigator.clipboard) navigator.clipboard.writeText(text).then(done, () => window.prompt('Copy this title:', text));
@@ -2602,6 +2618,7 @@
       .map(d => ({ qty: d.querySelector('.fsub-custom-qty')?.value || '1', text: d.querySelector('.fsub-custom-input')?.value || '' }))
       .filter(x => x.text.trim());
     state.breakfast = breakfastRows.filter(id => document.getElementById(id)).map(readBreakfast);
+    state.calendarTitle = customCalTitle;
 
     return state;
   }
@@ -2767,6 +2784,7 @@
       });
     }
 
+    customCalTitle = state.calendarTitle || '';
     breakfastRows = []; breakfastCount = 0;
     document.getElementById('breakfast-container').innerHTML = '';
     (state.breakfast || []).forEach(b => {
