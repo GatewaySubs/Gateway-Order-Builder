@@ -1156,8 +1156,14 @@
     if (!state.client || !state.date) return;
     try {
       const { orders } = await staffApi('/staff-orders?action=list');
-      const same = (orders || []).filter((o) => o.event_date === state.date
-        && [o.client_name, o.customers && o.customers.name].some((n) => n && normName(n) === normName(state.client)));
+      // Same date and the same customer: same phone number, or the same first + last name
+      // ("Michelle Lenhart" matches "Michelle Lenhart - INGAGE (Chi Chi Charity Classic)").
+      const digits = (v) => String(v || '').replace(/\D/g, '').slice(-10);
+      const nameKey = (v) => normName(v).replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(Boolean).slice(0, 2).join(' ');
+      const myPhone = digits(state.contactInfo), myName = nameKey(state.client);
+      const same = (orders || []).filter((o) => o.event_date === state.date && (
+        (myPhone.length === 10 && digits(o.customers && o.customers.phone) === myPhone)
+        || [o.client_name, o.customers && o.customers.name].some((n) => n && (normName(n) === normName(state.client) || (myName.includes(' ') && nameKey(n) === myName)))));
       if (!same.length) return;
       const pick = same.find((o) => o.status === 'confirmed') || same[0];
       if (confirm('You already have a saved order for ' + state.client + ' on ' + prettyDate(state.date) + (same.length > 1 ? ' (' + same.length + ' saved)' : '') + '.\n\nOK = update that order (and its calendar event)\nCancel = keep this as a separate, new order')) {
@@ -2494,14 +2500,19 @@
     const items = [];
     const bfast = (s.breakfast || []).reduce((a, b) => a + (n(b.qty) || 1), 0);
     if (bfast) items.push(`${bfast} breakfast sandwich${bfast === 1 ? '' : 'es'}`);
+    // Same racks (size + cut) and same-size platters are counted together: "2x 30-rack", "5x Lg platters".
+    const rackCounts = new Map();
     (s.racks || []).forEach(r => {
       const size = n(r.size), qty = n(r.qty) || 1;
       if (!size) return;
       const what = r.cut === 'Halves' ? `${size} half subs` : r.cut === 'Full' ? `${size} subs` : `${size}-rack`;
-      items.push((qty > 1 ? qty + 'x ' : '') + what);
+      rackCounts.set(what, (rackCounts.get(what) || 0) + qty);
     });
-    const platters = (s.platters || []).map(p => `${n(p.qty) || 1}x ${p.size === 'Large' ? 'Lg' : 'Sm'}`);
-    if (platters.length) items.push(platters.join(' + ') + ' platter');
+    rackCounts.forEach((qty, what) => items.push((qty > 1 ? qty + 'x ' : '') + what));
+    const platterCounts = { Sm: 0, Lg: 0 };
+    (s.platters || []).forEach(p => { platterCounts[p.size === 'Large' ? 'Lg' : 'Sm'] += n(p.qty) || 1; });
+    const platterParts = ['Sm', 'Lg'].filter(k => platterCounts[k]).map(k => `${platterCounts[k]}x ${k}`);
+    if (platterParts.length) items.push(platterParts.join(' + ') + (platterCounts.Sm + platterCounts.Lg > 1 ? ' platters' : ' platter'));
     const boxes = (s.boxLunches || []).reduce((a, b) => a + (b.sandwiches || []).reduce((x, w) => x + n(w.qty), 0), 0);
     if (boxes) items.push(`${boxes} box lunches`);
     // Individual orders, named by what they are: subs, wraps (incl. lettuce wraps) or salads
